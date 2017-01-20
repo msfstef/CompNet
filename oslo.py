@@ -13,8 +13,9 @@ class Oslo:
     
     def relaxation(self, prob = 0.5):
         diff = self.thresholds-self.slopes
-        while (diff < 0).any():
-            for i in np.where(diff < 0)[0]:
+        relax_ind = np.where(diff < 0)[0]
+        while len(relax_ind) != 0:
+            for i in relax_ind:
                 if i == 0:
                     self.slopes[i] -= 2
                     self.slopes[i+1] += 1
@@ -31,6 +32,7 @@ class Oslo:
                 self.thresholds[i] = np.random.choice([1,2],p=[prob,1.-prob])
                 
             diff = self.thresholds-self.slopes
+            relax_ind = np.where(diff < 0)[0]
     
     def simulate(self, steps, prob = 0.5):
         for i in range(steps):
