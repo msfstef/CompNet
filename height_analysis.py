@@ -4,7 +4,7 @@ from scipy.optimize import curve_fit
 from oslo import Oslo
 
 sys_sizes = [16,32,64,128]
-sys_sizes = [8,16,32,64,128]
+sys_sizes = [8,16,32,64,128,256,512]
 #sys_sizes = [8,16,32,64]
 #sys_sizes = [16,32,64]
 
@@ -75,11 +75,11 @@ def moving_average(arr, W):
     return ma[N - 1:] / N
 
 
-def plot_height_collapsed():
+def plot_height_collapsed(exp1 = -1, exp2 = 2, W = 100):
     height_sys = []
-    W= 100
-    exp1 = -1
-    exp2 = 2
+    #W= 100
+    #exp1 = -1
+    #exp2 = 2
     for size in sys_sizes:
         h_list = []
         sys = Oslo(size)
@@ -100,17 +100,27 @@ def plot_height_collapsed():
 
 
 #TASK 2c
-def mean_std_height(L, time):
+def gen_height_list(L, time, gen=False):
     h_list = []
+    if not gen:
+        return np.load('hlist'+str(L)+'.npy')
     sys = Oslo(L)
     sys.simulate(L*L)
+    
     for i in range(time):
         sys.simulate(1)
         h_list.append(sys.height)
+    
+    np.save('hlist'+str(L)+'.npy',np.array(h_list))
+    return h_list
+
+def mean_std_height(L, time):
+    h_list = gen_height_list(L,time)
     return np.mean(h_list), np.std(h_list)
 
 def scaling(L, omega_1, a_0, a_1):
     return a_0 + a_1*(L)**(-omega_1)
+
 
 def plot_height_scaling():
     scaled_means = []
@@ -118,7 +128,7 @@ def plot_height_scaling():
     for size in sys_sizes:
         h_mean, h_std = mean_std_height(size, 10000)
         scaled_means.append(h_mean/float(size))
-        scaled_std.append(h_std/float(size))
+        scaled_std.append(h_std)#/float(size**0.26))
         print 'Size', size,'completed (max', sys_sizes[-1],').'
     
     plt.figure(1)
@@ -132,7 +142,15 @@ def plot_height_scaling():
     plt.xlabel('System Size')
     plt.ylabel('Scaled Mean Height h/L')
     
+    plt.show()
+    
     plt.figure(2)
+    plt.loglog(sys_sizes,scaled_std)
+    print np.polyfit(np.log(sys_sizes),np.log(scaled_std),1)[0]
+    plt.show()    
+    
+    
+    plt.figure(3)
     plt.plot(sys_sizes, scaled_std, '.')
     param_std = curve_fit(scaling, sys_sizes, scaled_std)[0]
     print param_std
@@ -145,5 +163,47 @@ def plot_height_scaling():
     
     plt.show()
 
+
+#TASK 2d
+def gen_height_prob(L, time):
+    h_list = gen_height_list(L, time)
+    h_hist = np.histogram(h_list, np.arange(np.min(h_list),
+                                    np.max(h_list)+2,1))
+    h_prob = h_hist[0]/float(time)
+    h_range = h_hist[1]
+    return h_prob, h_range
+
+def plot_height_prob():
+    prob_dist, range_list = [], []
+    for size in sys_sizes:
+        h_prob, h_range = gen_height_prob(size, 10000)
+        prob_dist.append(h_prob)
+        range_list.append(h_range)
+        print 'Size', size,'completed (max', sys_sizes[-1],').'
     
+    for i in range(len(sys_sizes)):
+        plt.plot(range_list[i][:-1],prob_dist[i], label=sys_sizes[i])
+    plt.legend()
+    plt.show()
+
+def plot_height_prob_collapsed():
+    exp1 = 0.2
+    exp2 = 1
+    prob_dist, range_list = [], []
+    for size in sys_sizes:
+        h_prob, h_range = gen_height_prob(size, 10000)
+        prob_dist.append(h_prob)
+        range_list.append(h_range)
+        print 'Size', size,'completed (max', sys_sizes[-1],').'
+    
+    for i in range(len(sys_sizes)):
+        scaled_prob = np.multiply(sys_sizes[i]**exp1 ,prob_dist[i])
+        scaled_range = np.divide(range_list[i][:-1] - 1.73*sys_sizes[i]**exp2, 
+                                 float(sys_sizes[i]**exp1))
         
+        plt.plot(scaled_range,scaled_prob, label=sys_sizes[i])
+    plt.legend()
+    plt.show()
+
+plot_height_prob_collapsed()
+#plot_height_scaling()
