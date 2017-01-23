@@ -14,7 +14,7 @@ def plot_height_raw():
     for size in sys_sizes:
         h_list = []
         sys = Oslo(size)
-        for i in range(sys_sizes[-1]**2):
+        for i in range(sys_sizes[-1]**2.):
             sys.simulate(1)
             h_list.append(sys.height)
         height_sys.append(h_list)
@@ -22,7 +22,7 @@ def plot_height_raw():
         
     plt.figure()
     for h in height_sys:
-        plt.plot(range(1,sys_sizes[-1]**2+1), h)
+        plt.plot(range(1,sys_sizes[-1]**2.+1), h)
     plt.show()
     
 
@@ -87,13 +87,13 @@ def plot_height_collapsed(exp1 = -1, exp2 = 2, W = 100):
             sys.simulate(1)
             h_list.append(sys.height)
         h_list = moving_average(h_list, W)
-        height_sys.append((size**exp1)*h_list)
+        height_sys.append((size**float(exp1))*h_list)
         print 'Size', size,'completed (max', sys_sizes[-1],').'
         
     plt.figure()
     for i in range(len(height_sys)):
         scaled_time = np.arange(2*W+1,int(sys_sizes[i]*sys_sizes[i]*3) +1)
-        scaled_time = scaled_time/float(sys_sizes[i]**exp2)
+        scaled_time = scaled_time/float(sys_sizes[i]**float(exp2))
         plt.plot(scaled_time, height_sys[i], label=sys_sizes[i])
     plt.legend(loc=4)
     plt.show()
@@ -119,7 +119,7 @@ def mean_std_height(L, time):
     return np.mean(h_list), np.std(h_list)
 
 def scaling(L, omega_1, a_0, a_1):
-    return a_0 + a_1*(L)**(-omega_1)
+    return a_0 + a_1*(L)**float(-omega_1)
 
 
 def plot_height_scaling():
@@ -150,18 +150,18 @@ def plot_height_scaling():
     plt.show()    
     
     
-    plt.figure(3)
-    plt.plot(sys_sizes, scaled_std, '.')
-    param_std = curve_fit(scaling, sys_sizes, scaled_std)[0]
-    print param_std
-    size_range = np.linspace(1, sys_sizes[-1], 100)
-    fit_std = scaling(size_range, param_std[0],param_std[1],param_std[2])
-    plt.plot(size_range, fit_std, label = 'Fit')
-    plt.legend()
-    plt.xlabel('System Size')
-    plt.ylabel('Scaled Mean Height Standard Dev. $\sigma_h$/L')
+    #plt.figure(3)
+    #plt.plot(sys_sizes, scaled_std, '.')
+    #param_std = curve_fit(scaling, sys_sizes, scaled_std)[0]
+    #print param_std
+    #size_range = np.linspace(1, sys_sizes[-1], 100)
+    #fit_std = scaling(size_range, param_std[0],param_std[1],param_std[2])
+    #plt.plot(size_range, fit_std, label = 'Fit')
+    #plt.legend()
+    #plt.xlabel('System Size')
+    #plt.ylabel('Scaled Mean Height Standard Dev. $\sigma_h$/L')
     
-    plt.show()
+    #plt.show()
 
 
 #TASK 2d
@@ -170,7 +170,7 @@ def gen_height_prob(L, time):
     h_hist = np.histogram(h_list, np.arange(np.min(h_list),
                                     np.max(h_list)+2,1))
     h_prob = h_hist[0]/float(time)
-    h_range = h_hist[1]
+    h_range = h_hist[1][:-1]
     return h_prob, h_range
 
 def plot_height_prob():
@@ -182,13 +182,14 @@ def plot_height_prob():
         print 'Size', size,'completed (max', sys_sizes[-1],').'
     
     for i in range(len(sys_sizes)):
-        plt.plot(range_list[i][:-1],prob_dist[i], label=sys_sizes[i])
+        plt.plot(range_list[i],prob_dist[i], label=sys_sizes[i])
     plt.legend()
     plt.show()
 
 def plot_height_prob_collapsed():
     exp1 = 0.2
-    exp2 = 1
+    exp2 = 1.
+    a_0 = 1.73
     prob_dist, range_list = [], []
     for size in sys_sizes:
         h_prob, h_range = gen_height_prob(size, 10000)
@@ -197,13 +198,13 @@ def plot_height_prob_collapsed():
         print 'Size', size,'completed (max', sys_sizes[-1],').'
     
     for i in range(len(sys_sizes)):
-        scaled_prob = np.multiply(sys_sizes[i]**exp1 ,prob_dist[i])
-        scaled_range = np.divide(range_list[i][:-1] - 1.73*sys_sizes[i]**exp2, 
+        scaled_prob = np.multiply(sys_sizes[i]**float(exp1) ,prob_dist[i])
+        scaled_range = np.divide(range_list[i]-a_0*sys_sizes[i]**float(exp2), 
                                  float(sys_sizes[i]**exp1))
         
         plt.plot(scaled_range,scaled_prob, label=sys_sizes[i])
     plt.legend()
     plt.show()
 
-plot_height_prob_collapsed()
+#plot_height_prob_collapsed()
 #plot_height_scaling()
