@@ -7,7 +7,7 @@ sys_sizes = [8,16,32,64,128,256]
 
 
 #TASK 3a and 3b
-def gen_aval_list(L, time=1e5, gen=True):
+def gen_aval_list(L, time=1e6, gen=False):
     s_list = []
     if not gen:
         return np.load('slist'+str(L)+'.npy')
@@ -21,7 +21,7 @@ def gen_aval_list(L, time=1e5, gen=True):
     np.save('slist'+str(L)+'.npy',np.array(s_list))
     return s_list
 
-def gen_aval_prob_lin(L, time = 1e5):
+def gen_aval_prob_lin(L, time = 1e6):
     s_list = gen_aval_list(L, time)
     s_hist = np.histogram(s_list, np.arange(np.min(s_list),
                                     np.max(s_list)+2,1))
@@ -29,13 +29,13 @@ def gen_aval_prob_lin(L, time = 1e5):
     s_range = s_hist[1][:-1]
     return s_prob, s_range
 
-def gen_aval_prob_log(L, time = 1e5):
+def gen_aval_prob_log(L, time = 1e6):
     s_list = gen_aval_list(L, time)
     s_range, s_prob = log_bin(s_list,0,1,1.1,'integer')
     return s_prob, s_range
 
 
-def plot_aval_prob(time = 1e5, bin_type='log'):
+def plot_aval_prob(time = 1e6, bin_type='log'):
     """
     bin_type - 'lin', 'log', or 'both'.
     """
@@ -68,7 +68,7 @@ def plot_aval_prob(time = 1e5, bin_type='log'):
 
 #TASK 3c
 def plot_aval_prob_collapsed():
-    tau = 1.54
+    tau = 1.55
     D = 2.252
     print D*(2. - tau)
     prob_dist, range_list = [], []
@@ -84,13 +84,10 @@ def plot_aval_prob_collapsed():
         scaled_range = np.divide(range_list[i], 
                                  float(sys_sizes[i]**float(D)))
         
-        plt.loglog(scaled_range,scaled_prob, label=sys_sizes[i])
+        plt.loglog(scaled_range,scaled_prob,'.', label=sys_sizes[i])
     plt.legend(loc=3)
     plt.show()
 
-
-
-    
     
 #TASK 3d
 def calc_kth_moment(k, L, time=1e5):

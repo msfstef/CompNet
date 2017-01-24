@@ -5,8 +5,6 @@ from oslo import Oslo
 
 sys_sizes = [16,32,64,128]
 sys_sizes = [8,16,32,64,128,256,512]
-#sys_sizes = [8,16,32,64]
-#sys_sizes = [16,32,64]
 
 #TASK 2a
 def plot_height_raw():
@@ -100,22 +98,22 @@ def plot_height_collapsed(exp1 = -1, exp2 = 2, W = 100):
 
 
 #TASK 2c
-def gen_height_list(L, time, gen=False):
+def gen_height_list(L, time=1e5, gen=False):
     h_list = []
     if not gen:
         return np.load('hlist'+str(L)+'.npy')
     sys = Oslo(L)
     sys.simulate(L*L)
     
-    for i in range(time):
+    for i in range(int(time)):
         sys.simulate(1)
         h_list.append(sys.height)
     
     np.save('hlist'+str(L)+'.npy',np.array(h_list))
     return h_list
 
-def mean_std_height(L, time):
-    h_list = gen_height_list(L,time)
+def mean_std_height(L):
+    h_list = gen_height_list(L)
     return np.mean(h_list), np.std(h_list)
 
 def scaling(L, omega_1, a_0, a_1):
@@ -126,7 +124,7 @@ def plot_height_scaling():
     scaled_means = []
     scaled_std = []
     for size in sys_sizes:
-        h_mean, h_std = mean_std_height(size, 10000)
+        h_mean, h_std = mean_std_height(size)
         scaled_means.append(h_mean/float(size))
         scaled_std.append(h_std)#/float(size**0.26))
         print 'Size', size,'completed (max', sys_sizes[-1],').'
@@ -165,8 +163,8 @@ def plot_height_scaling():
 
 
 #TASK 2d
-def gen_height_prob(L, time):
-    h_list = gen_height_list(L, time)
+def gen_height_prob(L, time=1e6):
+    h_list = gen_height_list(L,time)
     h_hist = np.histogram(h_list, np.arange(np.min(h_list),
                                     np.max(h_list)+2,1))
     h_prob = h_hist[0]/float(time)
@@ -176,7 +174,7 @@ def gen_height_prob(L, time):
 def plot_height_prob():
     prob_dist, range_list = [], []
     for size in sys_sizes:
-        h_prob, h_range = gen_height_prob(size, 10000)
+        h_prob, h_range = gen_height_prob(size)
         prob_dist.append(h_prob)
         range_list.append(h_range)
         print 'Size', size,'completed (max', sys_sizes[-1],').'
@@ -187,12 +185,12 @@ def plot_height_prob():
     plt.show()
 
 def plot_height_prob_collapsed():
-    exp1 = 0.2
-    exp2 = 1.
-    a_0 = 1.73
+    exp1 = 0.221
+    exp2 = 1
+    a_0 = 1.728
     prob_dist, range_list = [], []
     for size in sys_sizes:
-        h_prob, h_range = gen_height_prob(size, 10000)
+        h_prob, h_range = gen_height_prob(size)
         prob_dist.append(h_prob)
         range_list.append(h_range)
         print 'Size', size,'completed (max', sys_sizes[-1],').'
@@ -206,5 +204,5 @@ def plot_height_prob_collapsed():
     plt.legend()
     plt.show()
 
-#plot_height_prob_collapsed()
+plot_height_prob_collapsed()
 #plot_height_scaling()
