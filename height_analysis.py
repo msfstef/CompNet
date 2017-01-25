@@ -4,7 +4,9 @@ from scipy.optimize import curve_fit
 from oslo import Oslo
 
 sys_sizes = [16,32,64,128]
+sys_sizes = [8,16,32,64,128,256,512,1024]
 sys_sizes = [8,16,32,64,128,256,512]
+#sys_sizes = [8,16,32,64,128,256]
 
 #TASK 2a
 def plot_height_raw():
@@ -73,32 +75,30 @@ def moving_average(arr, W):
     return ma[N - 1:] / N
 
 
-def plot_height_collapsed(exp1 = -1, exp2 = 2, W = 100):
+def plot_height_collapsed(exp1 = 1, exp2 = 2, W = 100):
     height_sys = []
-    #W= 100
-    #exp1 = -1
-    #exp2 = 2
+
     for size in sys_sizes:
         h_list = []
         sys = Oslo(size)
-        for i in range(int(size*size*3)):
+        for i in range(int(size*size +1e5)):
             sys.simulate(1)
             h_list.append(sys.height)
         h_list = moving_average(h_list, W)
-        height_sys.append((size**float(exp1))*h_list)
+        height_sys.append(h_list/float(size**float(exp1)))
         print 'Size', size,'completed (max', sys_sizes[-1],').'
         
     plt.figure()
     for i in range(len(height_sys)):
-        scaled_time = np.arange(2*W+1,int(sys_sizes[i]*sys_sizes[i]*3) +1)
+        scaled_time = np.arange(2*W+1,int(sys_sizes[i]*sys_sizes[i] + 1e5) +1)
         scaled_time = scaled_time/float(sys_sizes[i]**float(exp2))
-        plt.plot(scaled_time, height_sys[i], label=sys_sizes[i])
+        plt.loglog(scaled_time, height_sys[i], label=sys_sizes[i])
     plt.legend(loc=4)
     plt.show()
 
 
 #TASK 2c
-def gen_height_list(L, time=1e6, gen=True):
+def gen_height_list(L, time=1e5, gen=False):
     h_list = np.empty(int(time))
     if not gen:
         return np.load('hlist'+str(L)+'.npy')
@@ -186,8 +186,8 @@ def plot_height_prob():
 
 def plot_height_prob_collapsed():
     exp1 = 0.221
-    exp2 = 1
-    a_0 = 1.728
+    exp2 = 1.
+    a_0 = 1.73
     prob_dist, range_list = [], []
     for size in sys_sizes:
         h_prob, h_range = gen_height_prob(size)
