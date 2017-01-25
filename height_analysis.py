@@ -12,7 +12,7 @@ def plot_height_raw():
     for size in sys_sizes:
         h_list = []
         sys = Oslo(size)
-        for i in range(sys_sizes[-1]**2.):
+        for i in range(int(sys_sizes[-1]**2.)):
             sys.simulate(1)
             h_list.append(sys.height)
         height_sys.append(h_list)
@@ -20,7 +20,7 @@ def plot_height_raw():
         
     plt.figure()
     for h in height_sys:
-        plt.plot(range(1,sys_sizes[-1]**2.+1), h)
+        plt.plot(range(1,int(sys_sizes[-1]**2.+1)), h)
     plt.show()
     
 
@@ -98,8 +98,8 @@ def plot_height_collapsed(exp1 = -1, exp2 = 2, W = 100):
 
 
 #TASK 2c
-def gen_height_list(L, time=1e5, gen=False):
-    h_list = []
+def gen_height_list(L, time=1e6, gen=True):
+    h_list = np.empty(int(time))
     if not gen:
         return np.load('hlist'+str(L)+'.npy')
     sys = Oslo(L)
@@ -107,7 +107,7 @@ def gen_height_list(L, time=1e5, gen=False):
     
     for i in range(int(time)):
         sys.simulate(1)
-        h_list.append(sys.height)
+        h_list[i] = sys.height
     
     np.save('hlist'+str(L)+'.npy',np.array(h_list))
     return h_list
@@ -204,5 +204,5 @@ def plot_height_prob_collapsed():
     plt.legend()
     plt.show()
 
-plot_height_prob_collapsed()
+#plot_height_prob_collapsed()
 #plot_height_scaling()

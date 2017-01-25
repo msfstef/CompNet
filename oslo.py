@@ -47,7 +47,7 @@ class Oslo:
         hs = np.array([self.height, self.aval_size])
         relaxlib.restype = None
         relaxlib.relax(ctypes.c_int(self.size), 
-                       ctypes.c_double(prob), 
+                       ctypes.c_float(prob), 
                         np.ctypeslib.as_ctypes(hs), 
                         np.ctypeslib.as_ctypes(self.slopes), 
                         np.ctypeslib.as_ctypes(self.thresholds))
