@@ -56,6 +56,6 @@ class Oslo:
 
     
     def simulate(self, steps, prob = 0.5):
-        for i in range(steps):
+        for i in xrange(steps):
             self.drive()
             self.relaxation_alt(prob)
