@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from oslo import Oslo
 from log_bin import log_bin
 
-sys_sizes = [8,16,32,64,128,256]
+sys_sizes = [8,16,32,64,128,256,512]
 
 
 #TASK 3a and 3b
@@ -69,7 +69,7 @@ def plot_aval_prob(time = 1e6, bin_type='log'):
 #TASK 3c
 def plot_aval_prob_collapsed():
     tau = 1.55
-    D = 2.252
+    D = 2.2252
     print D*(2. - tau)
     prob_dist, range_list = [], []
     for size in sys_sizes:
@@ -88,7 +88,7 @@ def plot_aval_prob_collapsed():
     plt.legend(loc=3)
     plt.show()
 
-    
+
 #TASK 3d
 def calc_kth_moment(k, L, time=1e5):
     s_list = gen_aval_list(L, time)
@@ -100,7 +100,7 @@ def moment_size_scaling(k, plot=True):
     for size in sys_sizes:
         moments.append(calc_kth_moment(k, size))
 
-    param = np.polyfit(np.log(sys_sizes), np.log(moments), 1)
+    param = np.polyfit(np.log(sys_sizes)[-3:], np.log(moments)[-3:], 1)
     if plot:
         print param
         fit = param[0]*np.log(sys_sizes) + param[1]
