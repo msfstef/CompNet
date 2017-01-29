@@ -1,18 +1,19 @@
 #include <stdlib.h>
 #include <string.h> 
 
-void relax(int L, float p, int* hs, int* z, int* zc)
+void relax(int L, double p, int* hs, int* z, int* zc)
 {
 	int numFalling;
 	int numFalling_temp;
-    int indFalling[L];
-	int indFalling_temp[L];
+	int arr_size = 2*L;
+    int indFalling[arr_size];
+	int indFalling_temp[arr_size];
 	numFalling = 1;
 	indFalling[0] = 0;
 	int i, n;
     while (numFalling) {
 		numFalling_temp = 0;
-		memset(indFalling_temp, 0, L*sizeof( int ) );
+		memset(indFalling_temp, 0, arr_size*sizeof( int ) );
         for (n = 0; n < numFalling; n++){
 			i = indFalling[n];
             if (z[i] <= zc[i]) {continue;}
@@ -49,7 +50,7 @@ void relax(int L, float p, int* hs, int* z, int* zc)
 					numFalling_temp++ ;
 				}
 			}
-			float r = ((float)rand()/(float)(RAND_MAX));
+			double r = ((double)rand()/(double)(RAND_MAX));
             zc[i] = ( r < p ) ? ( 1 ) : ( 2 );
 			if (z[i] > zc[i]) {
 				indFalling_temp[numFalling_temp] = i;

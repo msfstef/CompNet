@@ -43,19 +43,18 @@ class Oslo:
             relax_ind = np.where(diff < 0)[0]
             relax_len = len(relax_ind)
     
-    def relaxation_alt(self, prob=0.5):
-        hs = np.array([self.height, self.aval_size])
+    def relaxation_fast(self, prob=0.5):
+        hs = np.array([self.height, self.aval_size], dtype=int)
         relaxlib.restype = None
         relaxlib.relax(ctypes.c_int(self.size), 
-                       ctypes.c_float(prob), 
+                       ctypes.c_double(prob), 
                         np.ctypeslib.as_ctypes(hs), 
                         np.ctypeslib.as_ctypes(self.slopes), 
                         np.ctypeslib.as_ctypes(self.thresholds))
         self.height = hs[0]
         self.aval_size = hs[1]
-
     
     def simulate(self, steps, prob = 0.5):
         for i in xrange(steps):
             self.drive()
-            self.relaxation_alt(prob)
+            self.relaxation_fast(prob)

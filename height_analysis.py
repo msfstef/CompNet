@@ -14,7 +14,7 @@ def plot_height_raw():
     for size in sys_sizes:
         h_list = []
         sys = Oslo(size)
-        for i in range(int(sys_sizes[-1]**2.)):
+        for i in xrange(int(sys_sizes[-1]**2.)):
             sys.simulate(1)
             h_list.append(sys.height)
         height_sys.append(h_list)
@@ -81,7 +81,7 @@ def plot_height_collapsed(exp1 = 1, exp2 = 2, W = 100):
     for size in sys_sizes:
         h_list = []
         sys = Oslo(size)
-        for i in range(int(size*size +1e5)):
+        for i in xrange(int(size*size +1e5)):
             sys.simulate(1)
             h_list.append(sys.height)
         h_list = moving_average(h_list, W)
@@ -89,7 +89,7 @@ def plot_height_collapsed(exp1 = 1, exp2 = 2, W = 100):
         print 'Size', size,'completed (max', sys_sizes[-1],').'
         
     plt.figure()
-    for i in range(len(height_sys)):
+    for i in xrange(len(height_sys)):
         scaled_time = np.arange(2*W+1,int(sys_sizes[i]*sys_sizes[i] + 1e5) +1)
         scaled_time = scaled_time/float(sys_sizes[i]**float(exp2))
         plt.loglog(scaled_time, height_sys[i], label=sys_sizes[i])
@@ -105,7 +105,7 @@ def gen_height_list(L, time=1e5, gen=False):
     sys = Oslo(L)
     sys.simulate(L*L)
     
-    for i in range(int(time)):
+    for i in xrange(int(time)):
         sys.simulate(1)
         h_list[i] = sys.height
     
@@ -195,7 +195,7 @@ def plot_height_prob_collapsed():
         range_list.append(h_range)
         print 'Size', size,'completed (max', sys_sizes[-1],').'
     
-    for i in range(len(sys_sizes)):
+    for i in xrange(len(sys_sizes)):
         scaled_prob = np.multiply(sys_sizes[i]**float(exp1) ,prob_dist[i])
         scaled_range = np.divide(range_list[i]-a_0*sys_sizes[i]**float(exp2), 
                                  float(sys_sizes[i]**exp1))
