@@ -107,6 +107,7 @@ def plot_height_collapsed(exp1 = 1, exp2 = 2, W = 100):
 def gen_height_list(L, time=1e5, gen=False):
     h_list = np.empty(int(time))
     if not gen:
+         print 'Size', L,'completed (max', sys_sizes[-1],').'
         return np.load('hlist'+str(L)+'.npy')
     sys = Oslo(L)
     sys.simulate(L*L)
@@ -115,6 +116,7 @@ def gen_height_list(L, time=1e5, gen=False):
         sys.simulate(1)
         h_list[i] = sys.height
     
+    print 'Size', L,'completed (max', sys_sizes[-1],').'
     np.save('hlist'+str(L)+'.npy',np.array(h_list))
     return h_list
 
@@ -133,7 +135,7 @@ def plot_height_scaling():
         h_mean, h_std = mean_std_height(size)
         scaled_means.append(h_mean/float(size))
         scaled_std.append(h_std)#/float(size**0.26))
-        print 'Size', size,'completed (max', sys_sizes[-1],').'
+       
     
     plt.figure(1)
     plt.plot(sys_sizes, scaled_means, '.')
@@ -151,21 +153,7 @@ def plot_height_scaling():
     plt.figure(2)
     plt.loglog(sys_sizes,scaled_std)
     print np.polyfit(np.log(sys_sizes),np.log(scaled_std),1)[0]
-    plt.show()    
-    
-    
-    #plt.figure(3)
-    #plt.plot(sys_sizes, scaled_std, '.')
-    #param_std = curve_fit(scaling, sys_sizes, scaled_std)[0]
-    #print param_std
-    #size_range = np.linspace(1, sys_sizes[-1], 100)
-    #fit_std = scaling(size_range, param_std[0],param_std[1],param_std[2])
-    #plt.plot(size_range, fit_std, label = 'Fit')
-    #plt.legend()
-    #plt.xlabel('System Size')
-    #plt.ylabel('Scaled Mean Height Standard Dev. $\sigma_h$/L')
-    
-    #plt.show()
+    plt.show()
 
 
 #TASK 2d
@@ -183,7 +171,6 @@ def plot_height_prob():
         h_prob, h_range = gen_height_prob(size)
         prob_dist.append(h_prob)
         range_list.append(h_range)
-        print 'Size', size,'completed (max', sys_sizes[-1],').'
     
     for i in range(len(sys_sizes)):
         plt.plot(range_list[i],prob_dist[i], label=sys_sizes[i])
@@ -199,7 +186,6 @@ def plot_height_prob_collapsed():
         h_prob, h_range = gen_height_prob(size)
         prob_dist.append(h_prob)
         range_list.append(h_range)
-        print 'Size', size,'completed (max', sys_sizes[-1],').'
     
     for i in xrange(len(sys_sizes)):
         scaled_prob = np.multiply(sys_sizes[i]**float(exp1) ,prob_dist[i])
@@ -217,7 +203,6 @@ def plot_height_prob_collapsed_alt():
         h_mean, h_std = mean_std_height(size)
         scaled_prob.append(np.multiply(h_prob,h_std))
         scaled_range.append(np.divide(h_range-h_mean,h_std))
-        print 'Size', size,'completed (max', sys_sizes[-1],').'
     
     for i in xrange(len(sys_sizes)):
         plt.plot(scaled_range[i],scaled_prob[i], label=sys_sizes[i])
