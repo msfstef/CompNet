@@ -93,7 +93,13 @@ def plot_height_collapsed(exp1 = 1, exp2 = 2, W = 100):
         scaled_time = np.arange(2*W+1,int(sys_sizes[i]*sys_sizes[i] + 1e5) +1)
         scaled_time = scaled_time/float(sys_sizes[i]**float(exp2))
         plt.loglog(scaled_time, height_sys[i], label=sys_sizes[i])
-    plt.legend(loc=4)
+        if i == len(height_sys)-1:
+            L = sys_sizes[i]
+            param = np.polyfit(np.log(scaled_time)[int(0.2*L*L):int(0.6*L*L)], 
+                               np.log(height_sys[i])[int(0.2*L*L):int(0.6*L*L)], 1)
+            print 'Slope of transient: ', param[0]
+    plt.legend(loc=4)    
+    
     plt.show()
 
 
@@ -201,6 +207,20 @@ def plot_height_prob_collapsed():
                                  float(sys_sizes[i]**exp1))
         
         plt.plot(scaled_range,scaled_prob, label=sys_sizes[i])
+    plt.legend()
+    plt.show()
+
+def plot_height_prob_collapsed_alt():
+    scaled_prob, scaled_range = [], []
+    for size in sys_sizes:
+        h_prob, h_range = gen_height_prob(size)
+        h_mean, h_std = mean_std_height(size)
+        scaled_prob.append(np.multiply(h_prob,h_std))
+        scaled_range.append(np.divide(h_range-h_mean,h_std))
+        print 'Size', size,'completed (max', sys_sizes[-1],').'
+    
+    for i in xrange(len(sys_sizes)):
+        plt.plot(scaled_range[i],scaled_prob[i], label=sys_sizes[i])
     plt.legend()
     plt.show()
 
