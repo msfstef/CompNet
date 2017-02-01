@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <string.h> 
 
-void relax(int L, double p, int* hs, int* z, int* zc)
+void relax(int L, double p, int* hsd, int* z, int* zc)
 {
 	int numFalling;
 	int numFalling_temp;
@@ -18,10 +18,10 @@ void relax(int L, double p, int* hs, int* z, int* zc)
 			i = indFalling[n];
             if (z[i] <= zc[i]) {continue;}
               
-            hs[1]++ ;
+            hsd[1]++ ;
              
             if (i == 0){
-                hs[0]-- ;
+                hsd[0]-- ;
                 z[i] = z[i] - 2 ;
                 z[i+1]++ ;
                 if (z[i+1] > zc[i+1]){
@@ -32,6 +32,7 @@ void relax(int L, double p, int* hs, int* z, int* zc)
 			else if (i == L-1){
                 z[i]-- ;
                 z[i-1]++ ;
+                hsd[2]++ ;
                 if (z[i-1] > zc[i-1]){
                     indFalling_temp[numFalling_temp] = i-1;
 					numFalling_temp++ ;
