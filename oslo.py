@@ -11,11 +11,13 @@ class Oslo:
         self.thresholds = np.random.randint(1,3,L)
         self.height = 0
         self.aval_size = 0
+        self.drop_size = 0
     
     def drive(self, i = 0):
         self.slopes[i] += 1
         self.height += 1
         self.aval_size = 0
+        self.drop_size = 0
     
     def relaxation(self, prob = 0.5):
         diff = self.thresholds-self.slopes
@@ -32,6 +34,7 @@ class Oslo:
                 elif i == len(self.slopes)-1:
                     self.slopes[i] -= 1
                     self.slopes[i-1] += 1
+                    self.drop_size += 1
                 else:
                     self.slopes[i] -= 2
                     self.slopes[i-1] += 1
@@ -44,15 +47,16 @@ class Oslo:
             relax_len = len(relax_ind)
     
     def relaxation_fast(self, prob=0.5):
-        hs = np.array([self.height, self.aval_size], dtype=int)
+        hsd = np.array([self.height, self.aval_size, self.drop_size], dtype=int)
         relaxlib.restype = None
         relaxlib.relax(ctypes.c_int(self.size), 
                        ctypes.c_double(prob), 
-                        np.ctypeslib.as_ctypes(hs), 
+                        np.ctypeslib.as_ctypes(hsd), 
                         np.ctypeslib.as_ctypes(self.slopes), 
                         np.ctypeslib.as_ctypes(self.thresholds))
-        self.height = hs[0]
-        self.aval_size = hs[1]
+        self.height = hsd[0]
+        self.aval_size = hsd[1]
+        self.drop_size = hsd[2]
     
     def simulate(self, steps, prob = 0.5):
         for i in xrange(steps):
