@@ -4,9 +4,7 @@ from scipy.optimize import curve_fit
 from oslo import Oslo
 
 sys_sizes = [16,32,64,128]
-sys_sizes = [8,16,32,64,128,256,512,1024]
-sys_sizes = [8,16,32,64,128,256,512]
-#sys_sizes = [8,16,32,64,128,256]
+sys_sizes = [8,16,32,64,128,256,512,1024,2048]
 
 #TASK 2a
 def plot_height_raw():
@@ -55,14 +53,14 @@ def plot_crossover_values():
     time_fit_coeff = np.polyfit(size_range, t_data, 2)
     time_fit = (time_fit_coeff[0]*size_range*size_range +  
                 time_fit_coeff[1]*size_range + time_fit_coeff[2])
-    print time_fit_coeff
+    print "Time Coeff:",time_fit_coeff
     plt.plot(size_range, time_fit)
     
     plt.figure(2)
     plt.plot(size_range, h_data, '.')
     h_fit_coeff = np.polyfit(size_range, h_data, 1)
     h_fit = h_fit_coeff[0]*size_range + h_fit_coeff[1]
-    print h_fit_coeff
+    print "Height Coeff:",h_fit_coeff
     plt.plot(size_range, h_fit)
     
     plt.show()
@@ -95,8 +93,8 @@ def plot_height_collapsed(exp1 = 1, exp2 = 2, W = 100):
         plt.loglog(scaled_time, height_sys[i], label=sys_sizes[i])
         if i == len(height_sys)-1:
             L = sys_sizes[i]
-            param = np.polyfit(np.log(scaled_time)[int(0.2*L*L):int(0.6*L*L)], 
-                               np.log(height_sys[i])[int(0.2*L*L):int(0.6*L*L)], 1)
+            param = np.polyfit(np.log10(scaled_time)[int(0.2*L*L):int(0.6*L*L)], 
+                               np.log10(height_sys[i])[int(0.2*L*L):int(0.6*L*L)], 1)
             print 'Slope of transient: ', param[0]
     plt.legend(loc=4)    
     
@@ -104,10 +102,10 @@ def plot_height_collapsed(exp1 = 1, exp2 = 2, W = 100):
 
 
 #TASK 2c
-def gen_height_list(L, time=1e5, gen=False):
+def gen_height_list(L, time=1e7, gen=False, save=True):
     h_list = np.empty(int(time))
     if not gen:
-         print 'Size', L,'completed (max', sys_sizes[-1],').'
+        print 'Size', L,'completed (max', sys_sizes[-1],').'
         return np.load('hlist'+str(L)+'.npy')
     sys = Oslo(L)
     sys.simulate(L*L)
@@ -116,49 +114,62 @@ def gen_height_list(L, time=1e5, gen=False):
         sys.simulate(1)
         h_list[i] = sys.height
     
+    if save:
+        np.save('hlist'+str(L)+'.npy',np.array(h_list))
     print 'Size', L,'completed (max', sys_sizes[-1],').'
-    np.save('hlist'+str(L)+'.npy',np.array(h_list))
     return h_list
 
 def mean_std_height(L):
     h_list = gen_height_list(L)
     return np.mean(h_list), np.std(h_list)
 
-def scaling(L, omega_1, a_0, a_1):
-    return a_0 + a_1*(L)**float(-omega_1)
-
-
-def plot_height_scaling():
+def plot_height_scaling(a_0 = 1.733):
     scaled_means = []
     scaled_std = []
     for size in sys_sizes:
         h_mean, h_std = mean_std_height(size)
         scaled_means.append(h_mean/float(size))
         scaled_std.append(h_std)#/float(size**0.26))
-       
     
     plt.figure(1)
-    plt.plot(sys_sizes, scaled_means, '.')
-    param = curve_fit(scaling, sys_sizes, scaled_means)[0]
-    print param
-    size_range = np.linspace(1, sys_sizes[-1], 100)
-    fit_means = scaling(size_range, param[0],param[1],param[2])
-    plt.plot(size_range, fit_means, label = 'Fit')
-    plt.legend(loc=4)
+    scaled_means_estimate = np.divide(scaled_means, float(a_0))
+    scaled_means_estimate = 1. - scaled_means_estimate
+    plt.loglog(sys_sizes, scaled_means_estimate, '.', label='Data')
+    param = np.polyfit(np.log10(sys_sizes), 
+                       np.log10(scaled_means_estimate), 1)
+    print "a_0 value:", a_0
+    print "omega_1 value:", -param[0]
+    size_range = np.linspace(sys_sizes[0], sys_sizes[-1], 100)
+    fit_means = param[0]*np.log10(size_range) + param[1]
+    fit_means = np.power(10., fit_means)
+    plt.loglog(size_range, fit_means, label = 'Fit')
+    plt.legend(loc=0)
     plt.xlabel('System Size')
-    plt.ylabel('Scaled Mean Height h/L')
-    
+    plt.ylabel('Scaled Mean Height h/a_0*L')
+    plt.xlim(sys_sizes[0], sys_sizes[-1]*1.1)
+    plt.ylim(np.min(scaled_means_estimate)*0.8,
+             np.max(scaled_means_estimate)*1.2)
     plt.show()
     
     plt.figure(2)
-    plt.loglog(sys_sizes,scaled_std)
-    print np.polyfit(np.log(sys_sizes),np.log(scaled_std),1)[0]
+    plt.loglog(sys_sizes,scaled_std, '.', label = 'Data')
+    param = np.polyfit(np.log10(sys_sizes),np.log10(scaled_std),1)
+    print 'Standard Dev. scaling with L:', param[0] 
+    fit_std = param[0]*np.log10(size_range) + param[1]
+    fit_std = np.power(10., fit_std)
+    plt.loglog(size_range, fit_std, label = 'Fit')
+    plt.xlabel('System Size')
+    plt.ylabel('Mean Height Standard Dev.')
+    plt.xlim(sys_sizes[0], sys_sizes[-1]*1.1)
+    plt.ylim(np.min(scaled_std)*0.8,
+             np.max(scaled_std)*1.2)
     plt.show()
 
 
 #TASK 2d
-def gen_height_prob(L, time=1e6):
-    h_list = gen_height_list(L,time)
+def gen_height_prob(L):
+    h_list = gen_height_list(L)
+    time = float(len(h_list))
     h_hist = np.histogram(h_list, np.arange(np.min(h_list),
                                     np.max(h_list)+2,1))
     h_prob = h_hist[0]/float(time)

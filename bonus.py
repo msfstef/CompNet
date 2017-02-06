@@ -4,10 +4,10 @@ from oslo import Oslo
 from log_bin import log_bin
 
 sys_sizes = [8,16,32,64,128,256]
-sys_sizes = [8,16,32,64,128]
+sys_sizes = [8,16,32,64,128,256,512,1024,2048]
 
 # BONUS TASK 1
-def gen_drop_list(L, time=1e5, gen=True, save=True):
+def gen_drop_list(L, time=1e7, gen=False, save=True):
     d_list = []
     if not gen:
         print 'Size', L,'completed (max', sys_sizes[-1],').'
@@ -90,5 +90,5 @@ def plot_drop_prob_collapsed_alt(D_1 = 1.5, D_2 = 1.2, tau = 0.23):
     plt.legend(loc=3)
     plt.show()
 
-plot_drop_prob_collapsed()
+#plot_drop_prob_collapsed()
 #plot_drop_prob_collapsed_alt()
