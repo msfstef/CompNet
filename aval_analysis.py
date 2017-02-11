@@ -1,7 +1,11 @@
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
 from oslo import Oslo
 from log_bin import log_bin
+font = {'family' : 'Arial',
+        'size'   : 16}
+matplotlib.rc('font', **font)
 
 sys_sizes = [8,16,32,64,128,256,512,1024]
 sys_sizes = [8,16,32,64,128,256,512,1024,2048]
