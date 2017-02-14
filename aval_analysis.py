@@ -6,6 +6,7 @@ from log_bin import log_bin
 font = {'family' : 'Arial',
         'size'   : 16}
 matplotlib.rc('font', **font)
+cm = plt.get_cmap('nipy_spectral')
 
 sys_sizes = [8,16,32,64,128,256,512,1024]
 sys_sizes = [8,16,32,64,128,256,512,1024,2048]
@@ -40,12 +41,11 @@ def gen_aval_prob_lin(L):
 
 def gen_aval_prob_log(L):
     s_list = gen_aval_list(L)
-    time = float(len(s_list))
     s_range, s_prob = log_bin(s_list,0,1,1.1,'integer')
     return s_prob, s_range
 
 
-def plot_aval_prob(bin_type='log'):
+def plot_aval_prob(bin_type='log', task='3b'):
     """
     bin_type - 'lin', 'log', or 'both'.
     """
@@ -65,13 +65,29 @@ def plot_aval_prob(bin_type='log'):
         prob_dist.append(s_prob)
         range_list.append(s_range)
     
-    for i in xrange(len(sys_sizes)):
-        plt.loglog(range_list[i],prob_dist[i], 
-                   '-', label=sys_sizes[i])
-        if bin_type == 'both':
-            plt.loglog(range_list_lin[i], prob_dist_lin[i],
-                       '.', label=sys_sizes[i])
-    plt.legend()
+    if task=='3a':
+        for i in xrange(len(sys_sizes)):
+            if bin_type == 'both':
+                plt.loglog(range_list_lin[i], prob_dist_lin[i],
+                           'b.', label='Raw')
+            plt.loglog(range_list[i],prob_dist[i], 
+                           'r-', label='Log Binned', lw=2)
+            plt.xlabel('Avalanche Size $s$ (# of grains toppled)')
+            
+    if task=='3b':
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        ax.set_color_cycle([cm(1.*i/9) for i in range(9)]) 
+        for i in xrange(len(sys_sizes)):
+            if bin_type == 'both':
+                plt.loglog(range_list_lin[i], prob_dist_lin[i],
+                           '.', label='L = '+str(sys_sizes[i]))
+            ax.loglog(range_list[i],prob_dist[i], 
+                           '-', label='L = '+str(sys_sizes[i]), lw=2)
+            plt.xlabel('Avalanche Size $s$')
+    
+    plt.ylabel('Avalanche Size Probability $P_N(s;L)$')
+    plt.legend(ncol=2, loc=1)
     plt.show()
 
 
@@ -84,14 +100,21 @@ def plot_aval_prob_collapsed(D = 2.252, tau = 1.557):
         prob_dist.append(s_prob)
         range_list.append(s_range)
     
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.set_color_cycle([cm(1.*i/9) for i in range(9)])    
     for i in xrange(len(sys_sizes)):
         scaled_prob = np.multiply(np.array(range_list[i])**float(tau),
                                                           prob_dist[i])
         scaled_range = np.divide(range_list[i], 
                                  float(sys_sizes[i]**float(D)))
         
-        plt.loglog(scaled_range,scaled_prob,'.', label=sys_sizes[i])
-    plt.legend(loc=3)
+        ax.loglog(scaled_range,scaled_prob,'-', lw=1.5,
+                  label='L = '+str(sys_sizes[i]))
+    
+    plt.xlabel('Scaled Avalanche Size $s/L^D$')
+    plt.ylabel('Scaled Avalanche Size Probability $s^{\\tau_s} P_N(s;L)$')
+    plt.legend(loc=3, ncol=2)
     plt.show()
 
 
@@ -102,6 +125,29 @@ def calc_kth_moment(k, L):
     kth_moment = np.sum(np.array(s_list)**float(k))/float(time)
     return kth_moment    
     
+def plot_moments(k_max=5):
+    k_range= range(1,k_max+1)
+    moment_list = []
+    param_list = []
+    for k in k_range:
+        moments = []
+        for size in sys_sizes:
+            moments.append(calc_kth_moment(k, size))
+        param = np.polyfit(np.log(sys_sizes)[-4:], np.log(moments)[-4:], 1)
+        moment_list.append(moments)
+        param_list.append(param)
+    
+    for i in range(k_max):
+        plt.loglog(sys_sizes, moment_list[i], 'k.', lw=2)
+        fit = np.exp(param_list[i][1])*np.array(sys_sizes)**float(param_list[i][0])
+        plt.loglog(sys_sizes, fit, 'b-', lw=1.5)
+    
+    plt.xlabel('System Size L')
+    plt.ylabel('kth Moment $\overline{s^k}$')
+    plt.show()
+    
+    
+    
 def moment_size_scaling(k, plot_scaling=True):
     moments = []
     for size in sys_sizes:
@@ -111,16 +157,21 @@ def moment_size_scaling(k, plot_scaling=True):
     if plot_scaling:
         print param
         scaled_moments = np.divide(moments,
-                        np.array(sys_sizes)**float(2.252*(1+k-1.557)))
-        scal_param = np.polyfit(np.log(sys_sizes)[4:], 
-                             np.log(scaled_moments)[4:], 1)
+                        np.exp(param[1])*np.array(sys_sizes)**float(param[0]))
+        scal_param = np.polyfit(np.log(sys_sizes)[-4:], 
+                             np.log(scaled_moments)[-4:], 1)
+        scaled_moments -= 1.
         fit = scal_param[0]*np.log(sys_sizes) + scal_param[1]
-        fit = np.exp(fit)
+        fit = np.exp(fit) - 1.
+        thresh = np.repeat(0.01,len(sys_sizes))
         plt.figure()
-        plt.loglog(sys_sizes, scaled_moments, '.', label='Raw Data')
-        plt.loglog(sys_sizes, fit, label='Fit')
-        plt.xlim(0)
-        plt.ylim(0,np.max(scaled_moments)*1.1)
+        plt.semilogx(sys_sizes, scaled_moments, '.', label='Data', lw=2)
+        plt.semilogx(sys_sizes, fit, 'g-', label='Fit' , lw=2)
+        plt.semilogx(sys_sizes, thresh, 'r--', label='1% Threshold')
+        plt.xlim(0, sys_sizes[-1])
+        plt.ylim(-np.max(scaled_moments)*0.1,np.max(scaled_moments)*1.1)
+        plt.xlabel('System Size L')
+        plt.ylabel('Scaling Error')
         plt.legend(loc=1)
         plt.show()
     else:
@@ -137,8 +188,10 @@ def moment_analysis(k_max):
     print 'D(2-tau) =', (param[0]*(1 + param[1]/param[0]))
     fit = param[0]*k_range + param[1]
     plt.figure()
-    plt.plot(k_range, slope_list, '.', label='Raw Data')
-    plt.plot(k_range, fit, label='Fit')
-    plt.legend(loc=2)
+    plt.plot(k_range, slope_list, 'k.', label='Data')
+    plt.plot(k_range, fit, 'b-',label='Fit')
+    plt.xlabel('$k$')
+    plt.ylabel('$D(1+k-\\tau_s)$')
+    plt.legend(loc=0)
     plt.show()
         

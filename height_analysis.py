@@ -213,7 +213,7 @@ def plot_height_scaling(a_0_guess = 1.733):
     plt.loglog(size_range, fit_means, label = 'Fit')
     plt.legend(loc=0)
     plt.xlabel('System Size L')
-    plt.ylabel('Scaled Mean Height  $\overline{h}/a_0L$')
+    plt.ylabel('Scaled Mean Height  $1-\overline{h}/a_0L$')
     plt.xlim(sys_sizes[0], sys_sizes[-1]*1.1)
     plt.ylim(np.min(scaled_means_estimate)*0.8,
              np.max(scaled_means_estimate)*1.2)
@@ -254,9 +254,14 @@ def plot_height_prob():
         prob_dist.append(h_prob)
         range_list.append(h_range)
     
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.set_color_cycle([cm(1.*i/9) for i in range(9)])
     for i in range(len(sys_sizes)):
-        plt.plot(range_list[i],prob_dist[i], label=sys_sizes[i])
-    plt.legend()
+        ax.semilogx(range_list[i],prob_dist[i], label="L = "+str(sys_sizes[i]))
+    plt.xlabel('Height $h$')
+    plt.ylabel('Prob. $P(h;L)$')
+    plt.legend(ncol=2, loc = 1)
     plt.show()
 
 def plot_height_prob_collapsed():
