@@ -1,13 +1,18 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib
 from oslo import Oslo
 from log_bin import log_bin
+font = {'family' : 'Arial',
+        'size'   : 16}
+matplotlib.rc('font', **font)
+cm = plt.get_cmap('nipy_spectral')
 
 sys_sizes = [8,16,32,64,128,256]
 sys_sizes = [8,16,32,64,128,256,512,1024,2048]
 
 # BONUS TASK 1
-def gen_drop_list(L, time=1e7, gen=False, save=True):
+def gen_drop_list(L, time=1e8, gen=False, save=True):
     d_list = []
     if not gen:
         print 'Size', L,'completed (max', sys_sizes[-1],').'
@@ -37,7 +42,7 @@ def gen_drop_prob(L):
 
 def gen_drop_prob_log(L):
     d_list = gen_drop_list(L)
-    d_range, d_prob = log_bin(d_list,0,1,1.1,'integer')
+    d_range, d_prob = log_bin(d_list,0.,1.,1.2,'integer')
     return d_prob, d_range
 
 
@@ -48,37 +53,53 @@ def plot_drop_prob():
         prob_dist.append(d_prob)
         range_list.append(d_range)
     
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.set_color_cycle([cm(1.*i/9) for i in range(9)])
     for i in range(len(sys_sizes)):
-        plt.loglog(range_list[i],prob_dist[i], label=sys_sizes[i])
-    plt.legend()
+        ax.loglog(range_list[i],prob_dist[i], label=sys_sizes[i])
+    plt.xlabel('Drop Size $d$')
+    plt.ylabel('Drop Size Probability $P(d;L)$')
+    plt.xlim(0)
+    plt.legend(loc=0, ncol=2)
     plt.show()
 
 
-def plot_drop_prob_collapsed(D = 1.2, tau = 1.02):
+def plot_drop_prob_collapsed(D = 1.265, tau = 1.018):
     prob_dist, range_list = [], []
     for size in sys_sizes:
         d_prob, d_range = gen_drop_prob_log(size)
         prob_dist.append(d_prob)
         range_list.append(d_range)
     
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.set_color_cycle([cm(1.*i/9) for i in range(9)])
     for i in xrange(len(sys_sizes)):
         scaled_prob = np.multiply(np.array(range_list[i])**float(tau),
                                                           prob_dist[i])
         scaled_range = np.divide(range_list[i], 
                                  float(sys_sizes[i]**float(D)))
         
-        plt.loglog(scaled_range,scaled_prob,'-', label=sys_sizes[i])
-    plt.legend(loc=3)
+        ax.loglog(scaled_range,scaled_prob,'-', label=sys_sizes[i])
+    plt.xlabel('Scaled Drop Size $d/L^D$')
+    plt.ylabel('Scaled Drop Size Probability $d^{\\tau_d}P(d;L)$')
+    plt.xlim(0)
+    plt.legend(loc=0, ncol=2)
     plt.show()
 
 
-def plot_drop_prob_collapsed_alt(D_1 = 1.5, D_2 = 1.2, tau = 0.23):
+def plot_drop_prob_collapsed_alt(D_1 = 1.50, D_2 = 1.265, tau = 0.23):
     prob_dist, range_list = [], []
     for size in sys_sizes:
         d_prob, d_range = gen_drop_prob_log(size)
         prob_dist.append(d_prob)
         range_list.append(d_range)
     
+    
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.set_color_cycle([cm(1.*i/9) for i in range(9)])
     for i in xrange(len(sys_sizes)):
         scaled_prob = np.divide(prob_dist[i], 
                                 np.array(range_list[i])**float(tau))
@@ -87,8 +108,64 @@ def plot_drop_prob_collapsed_alt(D_1 = 1.5, D_2 = 1.2, tau = 0.23):
                                  float(sys_sizes[i]**float(D_2)))
         
         plt.loglog(scaled_range,scaled_prob,'-', label=sys_sizes[i])
-    plt.legend(loc=3)
+    
+    plt.xlabel('Scaled Drop Size $d/L^{D_2}$')
+    plt.ylabel('Scaled Drop Size Probability $L^{D_1}d^{-\\tau_d}P(d;L)$')
+    plt.xlim(0)
+    plt.legend(loc=0, ncol=2)
     plt.show()
+    
 
-#plot_drop_prob_collapsed()
-#plot_drop_prob_collapsed_alt()
+def calc_kth_moment(k, L):
+    d_list = gen_drop_list(L)
+    time = float(len(d_list))
+    kth_moment = np.sum(np.array(d_list)**float(k))/float(time)
+    return kth_moment    
+
+    
+def moment_size_scaling(k, plot_scaling=True):
+    moments = []
+    for size in sys_sizes:
+        moments.append(calc_kth_moment(k, size))
+
+    param = np.polyfit(np.log(sys_sizes)[-4:], np.log(moments)[-4:], 1)
+    if plot_scaling:
+        print param
+        scaled_moments = np.divide(moments,
+                        np.exp(param[1])*np.array(sys_sizes)**float(param[0]))
+        scal_param = np.polyfit(np.log(sys_sizes)[-4:], 
+                             np.log(scaled_moments)[-4:], 1)
+        scaled_moments -= 1.
+        fit = scal_param[0]*np.log(sys_sizes) + scal_param[1]
+        fit = np.exp(fit) - 1.
+        thresh = np.repeat(0.01,len(sys_sizes))
+        plt.figure()
+        plt.semilogx(sys_sizes, scaled_moments, '.', label='Data', lw=2)
+        plt.semilogx(sys_sizes, fit, 'g-', label='Fit' , lw=2)
+        plt.semilogx(sys_sizes, thresh, 'r--', label='1% Threshold')
+        plt.xlim(0, sys_sizes[-1])
+        plt.ylim(-np.max(scaled_moments)*0.1,np.max(scaled_moments)*1.1)
+        plt.xlabel('System Size L')
+        plt.ylabel('Scaling Error')
+        plt.legend(loc=1)
+        plt.show()
+    else:
+        return param[0]
+
+
+def moment_analysis(k_max):
+    k_range = np.arange(1,k_max+1)
+    slope_list = []
+    for k in k_range:
+        slope_list.append(moment_size_scaling(k,False))
+    param = np.polyfit(k_range, slope_list, 1)
+    print 'D:',param[0],'and tau:',1.-param[1]/param[0]
+    fit = param[0]*k_range + param[1]
+    plt.figure()
+    plt.plot(k_range, slope_list, 'k.', label='Data')
+    plt.plot(k_range, fit, 'b-',label='Fit')
+    plt.xlabel('$k$')
+    plt.ylabel('$D(1+k-\\tau_s)$')
+    plt.legend(loc=0)
+    plt.show()
+        

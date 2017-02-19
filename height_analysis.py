@@ -12,6 +12,30 @@ sys_sizes = [8,16,32,64,128,256,512,1024,2048]
 #sys_sizes = [8,16,32,64,128,256,512]
 
 
+#TASK 1
+def plot_BTW():
+    height_sys = []
+    for prob in [1.,0., 0.5]:
+        h_list = []
+        sys = Oslo(8)
+        for i in xrange(200):
+            sys.simulate(1, prob=prob)
+            h_list.append(sys.height)
+        height_sys.append(h_list)
+        
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    for i in range(2):
+        ax.plot(range(1,201), height_sys[i], 
+                label='$z^{th}$ = '+str(i+1), lw=2)
+    ax.plot(range(1,201), height_sys[2],
+            label='$z^{th} \in \{1,2\}$', lw=2)
+    plt.xlabel('Time $t$')
+    plt.ylabel('Pile Height $h$')
+    plt.xlim(1,200)
+    plt.ylim(1,25)
+    plt.legend(loc=2, ncol=2)
+    plt.show()
 
 
 #TASK 2a
@@ -33,8 +57,8 @@ def plot_height_raw():
         ax.plot(range(1,int(sys_sizes[-1]**2.+1)), height_sys[i], 
                 label='L = ' + str(sys_sizes[i]))
     
-    plt.xlabel('Time (# of grains added)')
-    plt.ylabel('Pile Height h')
+    plt.xlabel('Time $t$')
+    plt.ylabel('Pile Height $h$')
     plt.xlim(0,sys_sizes[-1]*sys_sizes[-1])
     plt.legend(loc=2, ncol=2)
     plt.show()
@@ -156,7 +180,7 @@ def mean_std_height(L):
     h_list = gen_height_list(L)
     return np.mean(h_list), np.std(h_list)
 
-def plot_height_scaling(a_0_guess = 1.733):
+def plot_height_scaling(a_0_guess = 1.745):
     scaled_means = []
     scaled_std = []
     for size in sys_sizes:

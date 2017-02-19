@@ -45,7 +45,7 @@ def gen_aval_prob_log(L):
     return s_prob, s_range
 
 
-def plot_aval_prob(bin_type='log', task='3b'):
+def plot_aval_prob(bin_type='both', task='3a'):
     """
     bin_type - 'lin', 'log', or 'both'.
     """
@@ -72,7 +72,8 @@ def plot_aval_prob(bin_type='log', task='3b'):
                            'b.', label='Raw')
             plt.loglog(range_list[i],prob_dist[i], 
                            'r-', label='Log Binned', lw=2)
-            plt.xlabel('Avalanche Size $s$ (# of grains toppled)')
+            plt.xlabel('Avalanche Size $s$')
+            plt.legend(ncol=1, loc=1)
             
     if task=='3b':
         fig = plt.figure()
@@ -85,9 +86,10 @@ def plot_aval_prob(bin_type='log', task='3b'):
             ax.loglog(range_list[i],prob_dist[i], 
                            '-', label='L = '+str(sys_sizes[i]), lw=2)
             plt.xlabel('Avalanche Size $s$')
+        plt.legend(ncol=2, loc=1)
     
     plt.ylabel('Avalanche Size Probability $P_N(s;L)$')
-    plt.legend(ncol=2, loc=1)
+    
     plt.show()
 
 
