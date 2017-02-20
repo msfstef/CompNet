@@ -13,7 +13,17 @@ sys_sizes = [8,16,32,64,128,256,512,1024,2048]
 
 
 #TASK 3a and 3b
-def gen_aval_list(L, time=1e8, gen=False, save=True):
+def gen_aval_list(L, time=1e6, gen=True, save=False):
+    """
+    L - system size
+    time - number of grains to add after reaching steady state
+    gen - if set to True, generates new data from scratch. If set to False,
+        loads npy data from the same folder.
+    save - if set to True, saves data to npy files.
+    
+    Returns list of avalanche sizes after the system has reached the
+    steady state for the given time and system size.
+    """
     s_list = []
     if not gen:
         print 'Size', L,'completed (max', sys_sizes[-1],').'
@@ -31,6 +41,10 @@ def gen_aval_list(L, time=1e8, gen=False, save=True):
     return s_list
 
 def gen_aval_prob_lin(L):
+    """
+    Returns avalanche size probability distribution for the given system size L
+    using a linear binning.
+    """
     s_list = gen_aval_list(L)
     time = float(len(s_list))
     s_hist = np.histogram(s_list, np.arange(np.min(s_list),
@@ -40,14 +54,22 @@ def gen_aval_prob_lin(L):
     return s_prob, s_range
 
 def gen_aval_prob_log(L):
+    """
+    Returns avalanche size probability distribution for the given system size L
+    using logarithmic binning from the log_bin module.
+    """
     s_list = gen_aval_list(L)
-    s_range, s_prob = log_bin(s_list,0,1,1.1,'integer')
+    s_range, s_prob = log_bin(s_list,0,1,1.2,'integer')
     return s_prob, s_range
 
 
 def plot_aval_prob(bin_type='both', task='3a'):
     """
-    bin_type - 'lin', 'log', or 'both'.
+    bin_type - 'lin', 'log', or 'both'
+    task - '3a' or '3b' depending on which plot is needed
+    
+    Plots uncollapsed avalanche size probability distributions for the given
+    system sizes sys_sizes.
     """
     prob_dist, range_list = [], []
     if bin_type == 'both':
@@ -95,7 +117,12 @@ def plot_aval_prob(bin_type='both', task='3a'):
 
 #TASK 3c
 def plot_aval_prob_collapsed(D = 2.252, tau = 1.557):
-    print D*(2. - tau)
+    """
+    Plots collapsed avalanche size probability distributions for the given
+    system sizes sys_sizes using exponents D and tau as given.
+    """
+    print 'D =', D,'and tau =', tau    
+    print 'D(2-tau) =',D*(2. - tau)
     prob_dist, range_list = [], []
     for size in sys_sizes:
         s_prob, s_range = gen_aval_prob_log(size)
@@ -122,12 +149,18 @@ def plot_aval_prob_collapsed(D = 2.252, tau = 1.557):
 
 #TASK 3d
 def calc_kth_moment(k, L):
+    """
+    Returns kth moment of avalanche size for the given system size L.
+    """
     s_list = gen_aval_list(L)
     time = float(len(s_list))
     kth_moment = np.sum(np.array(s_list)**float(k))/float(time)
     return kth_moment    
     
 def plot_moments(k_max=5):
+    """
+    Plots kth moments against system size for k going from 1 to k_max.
+    """
     k_range= range(1,k_max+1)
     moment_list = []
     param_list = []
@@ -151,6 +184,10 @@ def plot_moments(k_max=5):
     
     
 def moment_size_scaling(k, plot_scaling=True):
+    """
+    Returns slope of kth moment vs system size if plot_scaling is set to False.
+    Plots the corrections to scaling to the kth moment otherwise.
+    """
     moments = []
     for size in sys_sizes:
         moments.append(calc_kth_moment(k, size))
@@ -181,6 +218,10 @@ def moment_size_scaling(k, plot_scaling=True):
 
 
 def moment_analysis(k_max):
+    """
+    Calculates kth moments against system size from k = 1 to k_max against
+    system size and uses the slopes to estimate critical exponents D and tau.
+    """
     k_range = np.arange(1,k_max+1)
     slope_list = []
     for k in k_range:

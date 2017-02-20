@@ -12,7 +12,17 @@ sys_sizes = [8,16,32,64,128,256]
 sys_sizes = [8,16,32,64,128,256,512,1024,2048]
 
 # BONUS TASK 1
-def gen_drop_list(L, time=1e8, gen=False, save=True):
+def gen_drop_list(L, time=1e6, gen=True, save=False):
+    """
+    L - system size
+    time - number of grains to add after reaching steady state
+    gen - if set to True, generates new data from scratch. If set to False,
+        loads npy data from the same folder.
+    save - if set to True, saves data to npy files.
+    
+    Returns list of drop sizes after the system has reached the
+    steady state for the given time and system size.
+    """
     d_list = []
     if not gen:
         print 'Size', L,'completed (max', sys_sizes[-1],').'
@@ -32,6 +42,10 @@ def gen_drop_list(L, time=1e8, gen=False, save=True):
 
 
 def gen_drop_prob(L):
+    """
+    Returns drop size probability distribution for the given system size L
+    using a linear binning.
+    """
     d_list = gen_drop_list(L)
     d_hist = np.histogram(d_list, np.arange(np.min(d_list),
                                     np.max(d_list)+2,1))
@@ -41,12 +55,20 @@ def gen_drop_prob(L):
 
 
 def gen_drop_prob_log(L):
+    """
+    Returns drop size probability distribution for the given system size L
+    using logarithmic binning from the log_bin module.
+    """
     d_list = gen_drop_list(L)
     d_range, d_prob = log_bin(d_list,0.,1.,1.2,'integer')
     return d_prob, d_range
 
 
 def plot_drop_prob():
+    """
+    Plots uncollapsed drop size probability distributions for the given
+    system sizes sys_sizes.
+    """
     prob_dist, range_list = [], []
     for size in sys_sizes:
         d_prob, d_range = gen_drop_prob_log(size)
@@ -57,15 +79,21 @@ def plot_drop_prob():
     ax = fig.add_subplot(111)
     ax.set_color_cycle([cm(1.*i/9) for i in range(9)])
     for i in range(len(sys_sizes)):
-        ax.loglog(range_list[i],prob_dist[i], label=sys_sizes[i])
+        ax.loglog(range_list[i],prob_dist[i], 
+                  label='L = '+str(sys_sizes[i]), lw=2)
     plt.xlabel('Drop Size $d$')
     plt.ylabel('Drop Size Probability $P(d;L)$')
     plt.xlim(0)
-    plt.legend(loc=0, ncol=2)
+    plt.legend(loc=1, ncol=2)
     plt.show()
 
 
 def plot_drop_prob_collapsed(D = 1.265, tau = 1.018):
+    """
+    Plots collapsed avalanche size probability distributions for the given
+    system sizes sys_sizes using exponents D and tau as given.
+    """
+    print 'D =', D,'and tau =', tau 
     prob_dist, range_list = [], []
     for size in sys_sizes:
         d_prob, d_range = gen_drop_prob_log(size)
@@ -81,7 +109,8 @@ def plot_drop_prob_collapsed(D = 1.265, tau = 1.018):
         scaled_range = np.divide(range_list[i], 
                                  float(sys_sizes[i]**float(D)))
         
-        ax.loglog(scaled_range,scaled_prob,'-', label=sys_sizes[i])
+        ax.loglog(scaled_range,scaled_prob,'-', 
+                  label='L = '+str(sys_sizes[i]), lw=2)
     plt.xlabel('Scaled Drop Size $d/L^D$')
     plt.ylabel('Scaled Drop Size Probability $d^{\\tau_d}P(d;L)$')
     plt.xlim(0)
@@ -90,6 +119,10 @@ def plot_drop_prob_collapsed(D = 1.265, tau = 1.018):
 
 
 def plot_drop_prob_collapsed_alt(D_1 = 1.50, D_2 = 1.265, tau = 0.23):
+    """
+    Plots collapsed avalanche size probability distributions for the given
+    system sizes sys_sizes using exponents D1, D2, and tau as given.
+    """
     prob_dist, range_list = [], []
     for size in sys_sizes:
         d_prob, d_range = gen_drop_prob_log(size)
@@ -117,6 +150,9 @@ def plot_drop_prob_collapsed_alt(D_1 = 1.50, D_2 = 1.265, tau = 0.23):
     
 
 def calc_kth_moment(k, L):
+    """
+    Returns kth moment of avalanche size for the given system size L.
+    """
     d_list = gen_drop_list(L)
     time = float(len(d_list))
     kth_moment = np.sum(np.array(d_list)**float(k))/float(time)
@@ -124,6 +160,10 @@ def calc_kth_moment(k, L):
 
     
 def moment_size_scaling(k, plot_scaling=True):
+    """
+    Returns slope of kth moment vs system size if plot_scaling is set to False.
+    Plots the corrections to scaling to the kth moment otherwise.
+    """
     moments = []
     for size in sys_sizes:
         moments.append(calc_kth_moment(k, size))
@@ -154,6 +194,10 @@ def moment_size_scaling(k, plot_scaling=True):
 
 
 def moment_analysis(k_max):
+    """
+    Calculates kth moments against system size from k = 1 to k_max against
+    system size and uses the slopes to estimate critical exponents D and tau.
+    """
     k_range = np.arange(1,k_max+1)
     slope_list = []
     for k in k_range:

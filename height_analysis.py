@@ -7,13 +7,16 @@ font = {'family' : 'Arial',
 matplotlib.rc('font', **font)
 cm = plt.get_cmap('nipy_spectral')
 
-sys_sizes = [16,32,64,128]
 sys_sizes = [8,16,32,64,128,256,512,1024,2048]
-#sys_sizes = [8,16,32,64,128,256,512]
+sys_sizes = [8,16,32,64,128,256,512]
 
 
 #TASK 1
 def plot_BTW():
+    """
+    Plots Oslo model height for the cases of p=0 and p=1, the reduced BTW
+    cases, as well as for p=0.5.
+    """
     height_sys = []
     for prob in [1.,0., 0.5]:
         h_list = []
@@ -40,6 +43,10 @@ def plot_BTW():
 
 #TASK 2a
 def plot_height_raw():
+    """
+    Plots the height of the pile with time for all the given system sizes from
+    the empty state.
+    """
     height_sys = []
     for size in sys_sizes:
         h_list = []
@@ -54,7 +61,7 @@ def plot_height_raw():
     ax = fig.add_subplot(111)
     ax.set_color_cycle([cm(1.*i/9) for i in range(9)])
     for i in range(len(sys_sizes)):
-        ax.plot(range(1,int(sys_sizes[-1]**2.+1)), height_sys[i], 
+        ax.loglog(range(1,int(sys_sizes[-1]**2.+1)), height_sys[i], 
                 label='L = ' + str(sys_sizes[i]))
     
     plt.xlabel('Time $t$')
@@ -65,6 +72,10 @@ def plot_height_raw():
     
 
 def find_crossover(L):
+    """
+    Returns the critical time at which system reaches steady state, as well
+    as steady state height.
+    """
     sys = Oslo(L)
     var = np.linspace(-1000,-400,L*L)
     h_list = []
@@ -79,6 +90,10 @@ def find_crossover(L):
 
 
 def plot_crossover_values(L_max=128):
+    """
+    Plots changes in the critical time and steady state height with system
+    size, and the appropriate quadratic and linear fits are also shown.
+    """
     t_data = []
     h_data = []
     size_range = np.arange(4,int(L_max)+1)
@@ -117,6 +132,9 @@ def plot_crossover_values(L_max=128):
 
 #TASK 2b
 def moving_average(arr, W):
+    """
+    Returns moving average of array arr, for an averaging window of 2W+1.
+    """
     N = 2*W+1
     ma = np.cumsum(arr, dtype=float)
     ma[N:] = ma[N:] - ma[:-N]
@@ -124,6 +142,10 @@ def moving_average(arr, W):
 
 
 def plot_height_collapsed(exp1 = 1, exp2 = 2, W = 100):
+    """
+    Plots data collapse of the height of the system against time for the
+    given exponents exp1 and exp2, with the smoothing averaging window of W.
+    """
     height_sys = []
 
     for size in sys_sizes:
@@ -159,7 +181,17 @@ def plot_height_collapsed(exp1 = 1, exp2 = 2, W = 100):
 
 
 #TASK 2c
-def gen_height_list(L, time=1e8, gen=False, save=True):
+def gen_height_list(L, time=1e5, gen=True, save=False):
+    """
+    L - system size
+    time - number of grains to add after reaching steady state
+    gen - if set to True, generates new data from scratch. If set to False,
+        loads npy data from the same folder.
+    save - if set to True, saves data to npy files.
+    
+    Returns list of pile heights after the system has reached the
+    steady state for the given time and system size.
+    """
     h_list = np.empty(int(time))
     if not gen:
         print 'Size', L,'completed (max', sys_sizes[-1],').'
@@ -177,10 +209,20 @@ def gen_height_list(L, time=1e8, gen=False, save=True):
     return h_list
 
 def mean_std_height(L):
+    """
+    Returns mean and standard deviation of the height.
+    """
     h_list = gen_height_list(L)
     return np.mean(h_list), np.std(h_list)
 
 def plot_height_scaling(a_0_guess = 1.745):
+    """
+    Finds the best a_0 estimate and plots the linear fit to the
+    scaled height to get estimates of omega_1.
+    
+    Also plots log graph of the standard deviation against system size with
+    linear fit to find the scaling.
+    """
     scaled_means = []
     scaled_std = []
     for size in sys_sizes:
@@ -263,6 +305,9 @@ def plot_height_scaling(a_0_guess = 1.745):
 
 #TASK 2d
 def gen_height_prob(L):
+    """
+    Returns height probability distribution for the given system size L.
+    """
     h_list = gen_height_list(L)
     time = float(len(h_list))
     h_hist = np.histogram(h_list, np.arange(np.min(h_list),
@@ -272,6 +317,10 @@ def gen_height_prob(L):
     return h_prob, h_range
 
 def plot_height_prob():
+    """
+    Plots uncollapsed height probability distributions for the given
+    system sizes sys_sizes.
+    """
     prob_dist, range_list = [], []
     for size in sys_sizes:
         h_prob, h_range = gen_height_prob(size)
@@ -289,6 +338,10 @@ def plot_height_prob():
     plt.show()
 
 def plot_height_prob_collapsed():
+    """
+    Plots collapsed height probability distributions for the given
+    system sizes sys_sizes using scaling laws found.
+    """
     exp1 = 0.221
     exp2 = 1.
     a_0 = 1.73
@@ -308,6 +361,10 @@ def plot_height_prob_collapsed():
     plt.show()
 
 def plot_height_prob_collapsed_alt():
+    """
+    Plots collapsed height probability distributions for the given
+    system sizes sys_sizes using the means and stand. deviations.
+    """
     scaled_prob, scaled_range = [], []
     for size in sys_sizes:
         h_prob, h_range = gen_height_prob(size)
@@ -326,6 +383,3 @@ def plot_height_prob_collapsed_alt():
     plt.ylabel('Scaled Prob. $\sigma_h P(h;L)$')
     plt.legend()
     plt.show()
-
-#plot_height_prob_collapsed()
-#plot_height_scaling()
