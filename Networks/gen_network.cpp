@@ -18,6 +18,7 @@
 #include <string>
 #include <cstring>
 #include <iomanip>
+#include <random> /* Needed to generate large random numbers */
 #include <fstream> /* Needed for file output */
 //#include <set>
 
@@ -78,15 +79,20 @@ int main(int argc, char *argv[]) {
 		}
 	}
 	
+	// Taken from http://stackoverflow.com/questions/28909982/generate-random-number-bigger-than-32767
+	// Generates large random numbers (rand() only goes up to 16 bit integers).
+	std::random_device rd;
+	std::default_random_engine eng {rd()};
+	std::uniform_int_distribution<> dist(0, 6*N);
+	
 	
 	for (int v=m; v<N; v++){
 		g.addVertex();
 		int temp = g.getNumberStubs();
-		cout << v << endl;
 		while (g.getNumberStubs() < temp + 2*m){
-			int i = rand() % temp;
-			int t = g.stubs[i];
-			g.addEdgeSlowly(v,t);
+			int i = dist(eng) % temp;
+			int t = g.getStub(i);
+			g.addEdge(v,t);
 		}			
 	}
 
@@ -117,7 +123,7 @@ int main(int argc, char *argv[]) {
 	g.write(edge_char);
 
 
-	/* // Studying the degree distribution
+	// Studying the degree distribution
 	vector<int> dd;
 	g.getDegreeDistribution(dd);
 	
@@ -130,7 +136,7 @@ int main(int argc, char *argv[]) {
 	// Write degree distribution to a file.
 	// This declares fout to be like cout but everything sent to fout goes to the file
 	// named in the declation
-    //ofstream fout("c:\DATA\CandN\degreedistribution.dat");
+    //ofstream fout("c:\DATA\CandN\degreediFstribution.dat");
 	std::string dist_str = "./data/degreedist_";
 	dist_str.append(m_str);
 	dist_str.append(underscore);
@@ -145,7 +151,7 @@ int main(int argc, char *argv[]) {
 	for (int k=0; k<dd.size(); k++){
 		fout << k << " \t " << dd[k] << endl; 
 	}
-	fout.close(); */
+	fout.close();
 
 	return 0;
 }

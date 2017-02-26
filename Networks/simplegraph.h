@@ -48,6 +48,7 @@ class simplegraph {
 	void write(ostream &);
 	void write(ostream &, bool);
 
+	int getStub(int);
 	int getNumberStubs();
 	int getNumberEdges();
 	int getNumberVertices();

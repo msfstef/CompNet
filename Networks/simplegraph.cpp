@@ -68,7 +68,15 @@ simplegraph::simplegraph(){
 		//		v2v[s].insert(t);
 		//		v2v[t].insert(s);
 	}
-
+	
+	
+	/**
+	 * Returns the vertex that stub i is connected to.
+	 */
+	int
+	simplegraph::getStub(int i) {
+		return stubs.at(i);
+	}
 	
 	/**
 	 * Adds a new edge from existing vertices s and t.

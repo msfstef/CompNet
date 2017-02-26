@@ -1,12 +1,10 @@
 import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
-import cython
-from numba import jit, int32
 
 
 
-N=int(1e4)
+N=int(1e3)
 m = 4
 
 def gen_graph(m, N):
