@@ -12,9 +12,23 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
+#include <algorithm>
 //#include <set>
 
 using namespace std;
+
+// Vector flattener from http://stackoverflow.com/questions/38874605/generic-method-for-flattening-2d-vectors
+
+template<typename T>
+std::vector<T> flatten(const std::vector<std::vector<T>> &orig)
+{   
+    std::vector<T> ret;
+    for(const auto &v: orig)
+        ret.insert(ret.end(), v.begin(), v.end());                                                                                         
+    return ret;
+}
+
+
 
 // Constructor
 simplegraph::simplegraph(){
@@ -42,11 +56,14 @@ simplegraph::simplegraph(){
 	 */
 	void
 	simplegraph::addEdge(int s, int t){
-		v2v[s].push_back(t);
-		v2v[t].push_back(s);
+		if (std::find(v2v[s].begin(), v2v[s].end(),t)!=v2v[s].end()){
+		} else{
+			v2v[s].push_back(t);
+			v2v[t].push_back(s);
 		
-		stubs.push_back(s);
-		stubs.push_back(t);
+			stubs.push_back(s);
+			stubs.push_back(t);
+		}
 		// This version is for set based structure
 		//		v2v[s].insert(t);
 		//		v2v[t].insert(s);
@@ -91,9 +108,7 @@ simplegraph::simplegraph(){
 	 */
 	int
 	simplegraph::getNumberStubs(){
-		int a_stubs=0;
-		for (int v=0; v<v2v.size(); v++) a_stubs+=getVertexDegree(v);
-		return a_stubs;
+		return stubs.size();
 	};
 
 	/**
