@@ -18,6 +18,7 @@
 #include <string>
 #include <cstring>
 #include <iomanip>
+#include <chrono> /* Needed for better seeding of special generator */
 #include <random> /* Needed to generate large random numbers */
 #include <fstream> /* Needed for file output */
 //#include <set>
@@ -27,9 +28,10 @@ using namespace std;
 
 int main(int argc, char *argv[]) {
 
-	cout << "Arguments are: N m where arguments are separated by spaces and put after command name" << endl; 
+	cout << "Arguments are: N m (runs)" << endl; 
 	cout << "               N  = number of vertices" << endl; 
 	cout << "               m = Number of edges added at each step." << endl; 
+	cout << "               runs = Number of total runs (default = 1)." << endl; 
 
 // *************************************************************
 // User defined variables - default values then command line values are processed
@@ -39,6 +41,9 @@ int main(int argc, char *argv[]) {
 
     // Number of edges added at each step.
 	int m=3;
+	
+	// Number of total runs.
+	int runs=1;
 
 // End of user defined section
 // *************************************************************
@@ -51,24 +56,37 @@ int main(int argc, char *argv[]) {
             N=atoi(argv[1]);
 			break;
 		case 2:
-			 m=atoi(argv[2]);
+			m=atoi(argv[2]);
+			break;
+		case 3: 
+			runs= atoi(argv[3]);
 			break;
 		default:
 			cout << " Too many arguments" << endl;
 		}
 	}
-
 	
-	// for use of simple built in C random number generator see
-    // http://www.cplusplus.com/reference/cstdlib/rand/
-	/* initialize random seed: */
-		
-	// srand(0); // use the fixed seed for debugging
-		
-	srand (time(NULL)); // Use the time version for real runs
-
+	// Defining string values for file saving.
+	std::string m_str = std::to_string(m);
+	std::string underscore = "_";
+	std::string N_str = std::to_string(N);
+	std::string end = ".txt";
 	
-   // start by defining an empty graph 
+	
+	
+	// initialize random seed based on system time.
+	unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+	
+	// Taken from http://stackoverflow.com/questions/28909982/generate-random-number-bigger-than-32767
+	// Generates large random numbers (rand() only goes up to 16 bit integers).
+	std::default_random_engine eng {seed};
+	std::uniform_int_distribution<> dist(0, 6*N);
+	
+	// Will create a number of BA models equal to the runs given,
+	// to get better statistics for the distribution.
+	vector<int> dd;
+	for (int run=0; run<runs; run++){
+	// start by defining an empty graph 
 	simplegraph g;
 	
 	// Initiate complete graph with m vertices.
@@ -79,13 +97,6 @@ int main(int argc, char *argv[]) {
 		}
 	}
 	
-	// Taken from http://stackoverflow.com/questions/28909982/generate-random-number-bigger-than-32767
-	// Generates large random numbers (rand() only goes up to 16 bit integers).
-	std::random_device rd;
-	std::default_random_engine eng {rd()};
-	std::uniform_int_distribution<> dist(0, 6*N);
-	
-	
 	for (int v=m; v<N; v++){
 		g.addVertex();
 		int temp = g.getNumberStubs();
@@ -95,22 +106,17 @@ int main(int argc, char *argv[]) {
 			g.addEdge(v,t);
 		}			
 	}
+	// Add results to the degree distribution.
+	g.getDegreeDistribution(dd);
 
 	
+	
+	if (runs==1){
  	cout << "Network has " << g.getNumberVertices() << " vertices" << endl;
 	cout << "Network has " << g.getNumberEdges() <<  " edges" << endl;
 	
-	// Write out list of edges to file if you want
-	// WARNING with file names and all strings in C++ \ has a special meaning.
-	// so for directories on Windows use either \\ for a single backslash or forwards slash / may work
-	//g.write("c:/DATA/CandN/edgelist.txt");
-	//g.write("c:\\DATA\\CandN\\edgelist.txt");
-    // Thie output files will appear in same directory as source code (this file) if you give no directories in filename
+	// Write out list of edges to file.
 	std::string edge_str = "./data/edgelist_";
-	std::string m_str = std::to_string(m);
-	std::string underscore = "_";
-	std::string N_str = std::to_string(N);
-	std::string end = ".txt";
 	edge_str.append(m_str);
 	edge_str.append(underscore);
 	edge_str.append(N_str);
@@ -121,18 +127,16 @@ int main(int argc, char *argv[]) {
 	strcpy(edge_char, edge_str.c_str());
 	
 	g.write(edge_char);
-
-
-	// Studying the degree distribution
-	vector<int> dd;
-	g.getDegreeDistribution(dd);
+	}
+	}
 	
-    // output on screen
+    /* // output on screen
     cout << "k \t n(k)" << endl;
 	for (int k=0; k<dd.size(); k++){
-		cout << k << " \t " << dd[k] << endl; 
+		cout << k << " \t " << dd[k] << endl;  */
 	}
-
+	
+	
 	// Write degree distribution to a file.
 	// This declares fout to be like cout but everything sent to fout goes to the file
 	// named in the declation
@@ -152,6 +156,7 @@ int main(int argc, char *argv[]) {
 		fout << k << " \t " << dd[k] << endl; 
 	}
 	fout.close();
-
+	
+	cout << "Complete." << endl;
 	return 0;
 }

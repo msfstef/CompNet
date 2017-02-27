@@ -17,13 +17,13 @@ def load_dist(m,N):
 
 def get_k_prob_dist(m,N):
     k, freq = load_dist(m,N)
-    prob = np.divide(freq,float(len(freq)))
+    prob = np.divide(freq,float(np.sum(freq)))
     return k, prob
 
 def get_k_prob_dist_log(m,N):
     k_list, freq = load_dist(m,N)
     raw_data = np.repeat(k_list,freq)
-    k, prob = log_bin(raw_data,0,1,1.5)
+    k, prob = log_bin(raw_data,m,1.,1.5)
     return k, prob
 
 def gen_theoretical_dist(m,k_max):
@@ -35,10 +35,10 @@ def gen_theoretical_dist(m,k_max):
 def plot_k_dist(m,N):
     k, prob = get_k_prob_dist_log(m,N)
     k_theory, prob_theory = gen_theoretical_dist(m,np.max(k))
-    print np.max(k), np.max(k_theory)
-    print prob[-1]
-    plt.loglog(k, prob,'.', lw=2, label='Data')
-    plt.loglog(k_theory, prob_theory,'-', label='Theory')
+    print prob
+    plt.loglog(k, prob,'-', lw=2, label='Data')
+    plt.loglog(k_theory, prob_theory,'--', lw=1.5, label='Theory')
     plt.xlabel('$k$')
     plt.ylabel('$p(k)$')
+    plt.legend(loc=0)
     plt.show()
