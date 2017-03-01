@@ -70,6 +70,7 @@
 ################################################################################
 import numpy as np
 import random
+from numba import jit, int_, float_
 ################################################################################
 # BINNING FUNCTIONS
 ################################################################################
@@ -125,6 +126,7 @@ def lin_bin(data, num_bins):
 # centres - list - the centre of each bin (in log space - ie. geometric mean)
 # counts  - list - the probability of data being in each bin
 ################################################################################
+@jit(nopython=True)
 def log_bin(data, bin_start=1., first_bin_width=1., a=2., datatype='integer', drop_zeros=True, debug_mode=False):
     # check datatype is valid
     valid_datatypes = ('float', 'integer')
@@ -134,12 +136,12 @@ def log_bin(data, bin_start=1., first_bin_width=1., a=2., datatype='integer', dr
         
     # ensure data is numpy array of floats
     if drop_zeros:
-        data = np.array([float(x) for x in data if x!=0])
+        data = np.array(data, dtype='float')[data!=0]
     else:
-        data = np.array([float(x) for x in data])
+        data = np.array(data, dtype='float')
             
     num_datapoints = len(data)
-    min_x, max_x = min(data), max(data)
+    min_x, max_x = np.min(data), np.max(data)
     
     # create array of the edges of the bins beginning with the left edge of the
     # leftmost bin, and ending with the right edge of the rightmost
@@ -155,7 +157,7 @@ def log_bin(data, bin_start=1., first_bin_width=1., a=2., datatype='integer', dr
     # find how many datapoints are in each bin
     # counts[i] is how many points are there in the bin whose left edge is bins[i]
     indices = np.digitize(data, bins[1:])
-    counts = [0. for x in bins[1:]]
+    counts = np.zeroes(len(bins[1:], dtype='float')
     for i in indices:
         counts[i] += 1./num_datapoints
         
@@ -197,10 +199,11 @@ def log_bin(data, bin_start=1., first_bin_width=1., a=2., datatype='integer', dr
     return centres, counts
 
 # returns the geometric mean of a list
+@jit(float_[:](int_[:]))
 def geometric_mean(x):
     s = len(x)
-    y = [np.log(z) for z in x]
-    z = sum(y)/s
+    y = np.log(x)
+    z = np.sum(y)/s
     return np.exp(z)
 
 ################################################################################
