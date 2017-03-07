@@ -126,14 +126,8 @@ def lin_bin(data, num_bins):
 # centres - list - the centre of each bin (in log space - ie. geometric mean)
 # counts  - list - the probability of data being in each bin
 ################################################################################
-@jit(nopython=True)
-def log_bin(data, bin_start=1., first_bin_width=1., a=2., datatype='integer', drop_zeros=True, debug_mode=False):
-    # check datatype is valid
-    valid_datatypes = ('float', 'integer')
-    if datatype not in valid_datatypes:
-        print 'datatype must be either "float" or "integer"'
-        exit(0)
-        
+@jit
+def log_bin(data, bin_start=1., first_bin_width=1., a=2., datatype='integer', drop_zeros=True):
     # ensure data is numpy array of floats
     if drop_zeros:
         data = np.array(data, dtype='float')[data!=0]
@@ -141,7 +135,7 @@ def log_bin(data, bin_start=1., first_bin_width=1., a=2., datatype='integer', dr
         data = np.array(data, dtype='float')
             
     num_datapoints = len(data)
-    min_x, max_x = np.min(data), np.max(data)
+    max_x = np.max(data)
     
     # create array of the edges of the bins beginning with the left edge of the
     # leftmost bin, and ending with the right edge of the rightmost
@@ -157,7 +151,7 @@ def log_bin(data, bin_start=1., first_bin_width=1., a=2., datatype='integer', dr
     # find how many datapoints are in each bin
     # counts[i] is how many points are there in the bin whose left edge is bins[i]
     indices = np.digitize(data, bins[1:])
-    counts = np.zeroes(len(bins[1:], dtype='float')
+    counts = np.zeros(len(bins[1:]), dtype='float')
     for i in indices:
         counts[i] += 1./num_datapoints
         
@@ -171,31 +165,17 @@ def log_bin(data, bin_start=1., first_bin_width=1., a=2., datatype='integer', dr
     # in log space   
     
     bin_indices = range(len(bins)-1) 
-    
+    bins = np.array(bins)
     if datatype == 'float':
-        widths = [bins[i+1] - bins[i] for i in bin_indices]
-        centres = [np.sqrt(bins[i+1] * bins[i]) for i in bin_indices]
+        widths = (np.roll(bins, -1) - bins)[:-1]
+        centres = np.sqrt(np.roll(bins, -1)* bins)[:-1]
     else:
-        widths = [np.ceil(bins[i+1]) - np.ceil(bins[i]) for i in bin_indices]
-        integers_in_each_bin = [range(int(np.ceil(bins[i])), int(np.ceil(bins[i+1]))) for i in bin_indices]
-        centres = [geometric_mean(x) for x in integers_in_each_bin]
-            
+        widths = (np.ceil(np.roll(bins, -1)) - np.ceil(bins))[:-1]
+        centres = np.empty(len(bin_indices))
+        for i in bin_indices:
+            centres[i] = geometric_mean(np.arange(int(np.ceil(bins[i])), int(np.ceil(bins[i+1]))))
     widths = np.array(widths)
     counts /= widths
-    
-    # print out some values to help with debugging
-    if debug_mode:
-        print 'DATA - %s' % data[:10]
-        print 'BINS - %s' % bins[:10]
-        print 'INDICES - %s' % indices[:10]
-        print 'COUNTS - %s' % counts[:10]
-        print 'WIDTHS - %s' % widths[:10]
-        try:
-            print 'INTEGERS IN EACH BIN - %s' % integers_in_each_bin[:10]
-        except:
-            pass
-        print 'CENTRES - %s' % centres[:10]
-        
     return centres, counts
 
 # returns the geometric mean of a list

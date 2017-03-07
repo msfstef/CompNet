@@ -150,25 +150,31 @@ simplegraph::simplegraph(){
 	};
 
 	/**
-	* Returns a vector if integers with the degree distribution.
-	* So if we call with
-	* vector<int> dd=getDegreeDistribution()
+	* Takes the degree distribution as an argument,
+	* and adds the distribution of the current graph to it.
+	* Also returns the maximum degree k for the current graph.
+	* int k_max = getDegreeDistribution(dd)
 	* then dd[k] is the number of vertices of degree[k]
 	* and (dd.size()-1) is the largest degree in the network
 	*/
-	void
+	int
 	simplegraph::getDegreeDistribution(vector<int>  & dd){
 		//vector<int> dd;
+		int max_k = 0;
 		for (int v=0; v<getNumberVertices(); v++){	
 			int k= getVertexDegree(v);
 			if (dd.size()<=k){
 				dd.resize(k+1); // vector must have size equal to maximum degree stored +1 as starts from k=0
 			}
+			if (k>max_k) {
+				max_k = k;
+			}
 			dd[k]++;
 		}
-		//return dd;
+		return max_k;
 	}
 
+	
 	void
 	simplegraph::write(char *outFile) {
 	  ofstream fout(outFile);

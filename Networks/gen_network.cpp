@@ -72,6 +72,9 @@ int main(int argc, char *argv[]) {
 	std::string N_str = std::to_string(N);
 	std::string end = ".txt";
 	
+	// Defining array for k_max values.
+	int k_max [runs];
+	
 	
 	
 	// initialize random seed based on system time.
@@ -80,7 +83,7 @@ int main(int argc, char *argv[]) {
 	// Taken from http://stackoverflow.com/questions/28909982/generate-random-number-bigger-than-32767
 	// Generates large random numbers (rand() only goes up to 16 bit integers).
 	std::default_random_engine eng {seed};
-	std::uniform_int_distribution<> dist(0, 6*N);
+	std::uniform_int_distribution<> dist(0, 2*m*N);
 	
 	// Will create a number of BA models equal to the runs given,
 	// to get better statistics for the distribution.
@@ -107,7 +110,7 @@ int main(int argc, char *argv[]) {
 		}			
 	}
 	// Add results to the degree distribution.
-	g.getDegreeDistribution(dd);
+	k_max[run] = g.getDegreeDistribution(dd);
 
 	
 	
@@ -133,8 +136,8 @@ int main(int argc, char *argv[]) {
     /* // output on screen
     cout << "k \t n(k)" << endl;
 	for (int k=0; k<dd.size(); k++){
-		cout << k << " \t " << dd[k] << endl;  */
-	}
+		cout << k << " \t " << dd[k] << endl;  
+	}*/
 	
 	
 	// Write degree distribution to a file.
@@ -156,6 +159,24 @@ int main(int argc, char *argv[]) {
 		fout << k << " \t " << dd[k] << endl; 
 	}
 	fout.close();
+	
+	
+	// Write k_max values to file.
+	std::string kmax_str = "./data/kmax_";
+	kmax_str.append(m_str);
+	kmax_str.append(underscore);
+	kmax_str.append(N_str);
+	kmax_str.append(end);
+	
+	char *kmax_char = new char[kmax_str.length() + 1];
+	strcpy(kmax_char, kmax_str.c_str());
+	
+	ofstream fout2(kmax_char);
+	fout2 << "k_max values" << endl;
+	for (int i = 0; i<runs; i++){
+		fout2 << k_max[i] << endl; 
+	}
+	fout2.close();
 	
 	cout << "Complete." << endl;
 	return 0;

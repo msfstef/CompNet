@@ -53,7 +53,7 @@ class simplegraph {
 	int getNumberEdges();
 	int getNumberVertices();
 	int getVertexDegree(int);
-	void getDegreeDistribution(vector<int> &);
+	int getDegreeDistribution(vector<int> &);
 
 	int addVertex();
 
