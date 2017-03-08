@@ -1,5 +1,5 @@
 import numpy as np
-from log_bin import log_bin, lin_bin
+from log_bin_BACKUP import log_bin, lin_bin
 import matplotlib.pyplot as plt
 from scipy import stats
 from scipy import optimize
@@ -9,8 +9,8 @@ def load_edges(m,N):
                            dtype='int')
     return edge_list
 
-def load_dist(m,N):
-    dist_file = np.loadtxt("./data/degreedist_"+str(int(m))+"_"+str(int(N))+".txt",
+def load_dist_run(m,N,run):
+    dist_file = np.loadtxt("./data/degreedistrun_"+str(int(m))+"_"+str(int(N))+"_"+str(int(run))+".txt",
                             skiprows=1, dtype='int')
     k_list = dist_file[:,0]
     frequency = dist_file[:,1]
@@ -21,19 +21,39 @@ def load_k_max(m,N):
                             skiprows=1, dtype='int')
     return k_max_file
 
-def get_k_prob_dist(m,N):
-    k, freq = load_dist(m,N)
-    prob = np.divide(freq,float(np.sum(freq)))
-    return k, prob
+def get_k_prob_dist(m,N,runs):
+    k_list = np.empty(1)
+    freq_list = np.zeros(1)
+    for run in range(runs):
+        k, freq = load_dist_run(m,N,run)
+        if len(k)>len(k_list):
+            freq_list=np.pad(freq_list,(0,len(k)-len(k_list)),'constant')
+            k_list = k
+            freq_list += freq
+    prob = np.divide(freq_list,float(np.sum(freq_list)))
+    return k_list, prob
 
-def get_k_prob_dist_log(m,N):
-    k_list, freq = load_dist(m,N)
-    raw_data = np.repeat(k_list,freq)
-    k, prob = log_bin(raw_data,m,1.,1.2)
-    return k, prob
+def get_k_prob_dist_log(m,N,runs):
     
-def get_k_prob_dist_cdf(m,N):
-    k, prob = get_k_prob_dist(m,N)
+    k_list = np.empty(runs)
+    prob_list= np.empty(runs)
+    for run in range(runs):
+        k, freq = load_dist_run(m,N,run)
+        raw_data = np.repeat(k,freq)
+        k, prob = log_bin(raw_data, m, 1.,1.3)
+        k_list[run] = k
+        prob_list[run] = prob
+    k = max(k_list, key=len)
+    for i in xrange(prob_list):
+        if len(k)>len(prob):
+            prob_list[i]=np.pad(prob_list[i],(0,len(k)-len(prob_list[i])),'constant')
+    
+    prob_mean = np.mean(prob_list,axis=0)
+    prob_std = np.std(prob_list,axis=0)
+    return k, prob_mean, prob_std
+    
+def get_k_prob_dist_cdf(m,N,runs):
+    k, prob = get_k_prob_dist(m,N,runs)
     cdf = np.cumsum(prob)
     return k, cdf
 
@@ -59,17 +79,17 @@ def plot_k_max_dist(m,N, bins=10):
     plt.show()
 
 
-def plot_k_dist(m,N, method='logbin'):
+def plot_k_dist(m,N,runs, method='logbin'):
     if method == 'logbin':
-        k, prob = get_k_prob_dist_log(m,N)
+        k, prob = get_k_prob_dist_log(m,N,runs)
         k_theory, prob_theory = gen_theoretical_dist(m,np.max(k))
         ls='-'
     elif method == 'cdf':
-        k, prob = get_k_prob_dist_cdf(m,N)
+        k, prob = get_k_prob_dist_cdf(m,N,runs)
         k_theory, prob_theory = gen_theoretical_cdf(m,np.max(k))
         ls = '-'
     elif method == 'raw':
-        k, prob = get_k_prob_dist(m,N)
+        k, prob = get_k_prob_dist(m,N,runs)
         k_theory, prob_theory = gen_theoretical_dist(m,np.max(k))
         ls = '.'
     plt.loglog(k, prob,ls, lw=2, label='Data')
@@ -120,11 +140,11 @@ def fit_k_max_vs_N(m, N_max, plot=True):
     # From http://scipy-cookbook.readthedocs.io/items/FittingData.html#id2
     fitfunc = lambda p, x: p[1] * x + p[0]
     errfunc = lambda p, x, y, err: (y - fitfunc(p, x)) / err
+    
 
     guess = [1.0, 0.5]
     out = optimize.leastsq(errfunc, guess,
                        args=(log_N, log_mean, log_std), full_output=1)
-
     pfinal = out[0]
     covar = out[1]
     

@@ -67,10 +67,11 @@ int main(int argc, char *argv[]) {
 	}
 	
 	// Defining string values for file saving.
-	std::string m_str = std::to_string(m);
-	std::string underscore = "_";
-	std::string N_str = std::to_string(N);
-	std::string end = ".txt";
+	string m_str = to_string(m);
+	string underscore = "_";
+	string N_str = to_string(N);
+	string end = ".txt";
+	
 	
 	// Defining array for k_max values.
 	int k_max [runs];
@@ -82,25 +83,26 @@ int main(int argc, char *argv[]) {
 	
 	// Taken from http://stackoverflow.com/questions/28909982/generate-random-number-bigger-than-32767
 	// Generates large random numbers (rand() only goes up to 16 bit integers).
-	std::default_random_engine eng {seed};
-	std::uniform_int_distribution<> dist(0, 2*m*N);
+	default_random_engine eng {seed};
+	uniform_int_distribution<> dist(0, 2*m*N+1);
 	
 	// Will create a number of BA models equal to the runs given,
 	// to get better statistics for the distribution.
 	vector<int> dd;
 	for (int run=0; run<runs; run++){
+	dd.clear();
 	// start by defining an empty graph 
 	simplegraph g;
 	
 	// Initiate complete graph with m vertices.
-	for (int v=0; v<m; v++){
+	for (int v=0; v<m+1; v++){
 		g.addVertex();
 		for (int i=0; i<v; i++){
 			g.addEdge(v, i);
 		}
 	}
 	
-	for (int v=m; v<N; v++){
+	for (int v=m+1; v<N; v++){
 		g.addVertex();
 		int temp = g.getNumberStubs();
 		while (g.getNumberStubs() < temp + 2*m){
@@ -111,15 +113,31 @@ int main(int argc, char *argv[]) {
 	}
 	// Add results to the degree distribution.
 	k_max[run] = g.getDegreeDistribution(dd);
-
 	
+	string distr_str = "./data/degreedistrun_";
+	distr_str.append(m_str);
+	distr_str.append(underscore);
+	distr_str.append(N_str);
+	distr_str.append(underscore);
+	distr_str.append(to_string(run));
+	distr_str.append(end);
+	
+	char *distr_char = new char[distr_str.length() + 1];
+	strcpy(distr_char, distr_str.c_str());
+
+	ofstream frout(distr_char);
+	frout << "k \t n(k)" << endl;
+	for (int k=0; k<dd.size(); k++){
+		frout << k << " \t " << dd[k] << endl; 
+	}
+	frout.close();
 	
 	if (runs==1){
  	cout << "Network has " << g.getNumberVertices() << " vertices" << endl;
 	cout << "Network has " << g.getNumberEdges() <<  " edges" << endl;
 	
 	// Write out list of edges to file.
-	std::string edge_str = "./data/edgelist_";
+	string edge_str = "./data/edgelist_";
 	edge_str.append(m_str);
 	edge_str.append(underscore);
 	edge_str.append(N_str);
@@ -133,18 +151,13 @@ int main(int argc, char *argv[]) {
 	}
 	}
 	
-    /* // output on screen
-    cout << "k \t n(k)" << endl;
-	for (int k=0; k<dd.size(); k++){
-		cout << k << " \t " << dd[k] << endl;  
-	}*/
 	
-	
+	/*
 	// Write degree distribution to a file.
 	// This declares fout to be like cout but everything sent to fout goes to the file
 	// named in the declation
     //ofstream fout("c:\DATA\CandN\degreediFstribution.dat");
-	std::string dist_str = "./data/degreedist_";
+	string dist_str = "./data/degreedist_";
 	dist_str.append(m_str);
 	dist_str.append(underscore);
 	dist_str.append(N_str);
@@ -158,11 +171,11 @@ int main(int argc, char *argv[]) {
 	for (int k=0; k<dd.size(); k++){
 		fout << k << " \t " << dd[k] << endl; 
 	}
-	fout.close();
+	fout.close(); */
 	
 	
 	// Write k_max values to file.
-	std::string kmax_str = "./data/kmax_";
+	string kmax_str = "./data/kmax_";
 	kmax_str.append(m_str);
 	kmax_str.append(underscore);
 	kmax_str.append(N_str);

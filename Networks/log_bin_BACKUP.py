@@ -69,7 +69,7 @@
 
 ################################################################################
 import numpy as np
-from numba import jit, int_, float_
+import random
 ################################################################################
 # BINNING FUNCTIONS
 ################################################################################
@@ -125,16 +125,21 @@ def lin_bin(data, num_bins):
 # centres - list - the centre of each bin (in log space - ie. geometric mean)
 # counts  - list - the probability of data being in each bin
 ################################################################################
-@jit
-def log_bin(data, bin_start=1., first_bin_width=1., a=2., datatype='integer', drop_zeros=True):
+def log_bin(data, bin_start=1., first_bin_width=1., a=2., datatype='integer', drop_zeros=True, debug_mode=False):
+    # check datatype is valid
+    valid_datatypes = ('float', 'integer')
+    if datatype not in valid_datatypes:
+        print 'datatype must be either "float" or "integer"'
+        exit(0)
+        
     # ensure data is numpy array of floats
     if drop_zeros:
-        data = np.array(data, dtype='float')[data!=0]
+        data = np.array([float(x) for x in data if x!=0])
     else:
-        data = np.array(data, dtype='float')
+        data = np.array([float(x) for x in data])
             
     num_datapoints = len(data)
-    max_x = np.max(data)
+    min_x, max_x = min(data), max(data)
     
     # create array of the edges of the bins beginning with the left edge of the
     # leftmost bin, and ending with the right edge of the rightmost
@@ -150,7 +155,7 @@ def log_bin(data, bin_start=1., first_bin_width=1., a=2., datatype='integer', dr
     # find how many datapoints are in each bin
     # counts[i] is how many points are there in the bin whose left edge is bins[i]
     indices = np.digitize(data, bins[1:])
-    counts = np.zeros(len(bins[1:]), dtype='float')
+    counts = [0. for x in bins[1:]]
     for i in indices:
         counts[i] += 1./num_datapoints
         
@@ -164,24 +169,90 @@ def log_bin(data, bin_start=1., first_bin_width=1., a=2., datatype='integer', dr
     # in log space   
     
     bin_indices = range(len(bins)-1) 
-    bins = np.array(bins)
+    
     if datatype == 'float':
-        widths = (np.roll(bins, -1) - bins)[:-1]
-        centres = np.sqrt(np.roll(bins, -1)* bins)[:-1]
+        widths = [bins[i+1] - bins[i] for i in bin_indices]
+        centres = [np.sqrt(bins[i+1] * bins[i]) for i in bin_indices]
     else:
-        widths = (np.ceil(np.roll(bins, -1)) - np.ceil(bins))[:-1]
-        centres = np.empty(len(bin_indices))
-        for i in bin_indices:
-            centres[i] = geometric_mean(np.arange(int(np.ceil(bins[i])), int(np.ceil(bins[i+1]))))
+        widths = [np.ceil(bins[i+1]) - np.ceil(bins[i]) for i in bin_indices]
+        integers_in_each_bin = [range(int(np.ceil(bins[i])), int(np.ceil(bins[i+1]))) for i in bin_indices]
+        centres = [geometric_mean(x) for x in integers_in_each_bin]
+            
     widths = np.array(widths)
     counts /= widths
+    
+    # print out some values to help with debugging
+    if debug_mode:
+        print 'DATA - %s' % data[:10]
+        print 'BINS - %s' % bins[:10]
+        print 'INDICES - %s' % indices[:10]
+        print 'COUNTS - %s' % counts[:10]
+        print 'WIDTHS - %s' % widths[:10]
+        try:
+            print 'INTEGERS IN EACH BIN - %s' % integers_in_each_bin[:10]
+        except:
+            pass
+        print 'CENTRES - %s' % centres[:10]
+        
     return centres, counts
 
 # returns the geometric mean of a list
-@jit(float_[:](int_[:]))
 def geometric_mean(x):
     s = len(x)
-    y = np.log(x)
-    z = np.sum(y)/s
+    y = [np.log(z) for z in x]
+    z = sum(y)/s
     return np.exp(z)
 
+################################################################################
+# EXAMPLES
+################################################################################
+   
+# generate some test data that is power law distributed
+def generate_power_law_data(gamma, N):
+    x = np.random.random(N)
+    y = 1./(1-x)
+    y = y**(1./gamma)
+    y.sort()
+    return y
+
+# log bin some data
+def test_float(N=100000., a=1.5):
+    import matplotlib.pyplot as plt
+    x = generate_power_law_data(1, N)
+    vals, counts = lin_bin(x, int(max(x)))
+    b, c = log_bin(x, 1., 1.5, a, debug_mode=True)
+    plt.loglog(vals, counts, 'bx')
+    plt.loglog(b, c, 'r-')
+    plt.show() 
+    
+# now with integers
+def test_int(N=100000., a=1.5):
+    import matplotlib.pyplot as plt
+    x = generate_power_law_data(1, N)
+    x = np.array([int(z) for z in x])
+    vals, counts = frequency(x)
+    b, c = log_bin(x, 1., 1.5, a, 'integer', debug_mode=True)
+    plt.loglog(vals, counts/N, 'bx')
+    plt.loglog(b, c, 'r-')
+    plt.show()    
+      
+# log bin some data - the very low growth factor gives a kink in the line
+# this happens when there are too few points in each bin
+def test_too_low_a():
+    test_float(a=1.01)  
+    
+def test_normalisation(N=10000.):
+    import matplotlib.pyplot as plt
+    x = generate_power_law_data(1, N)
+    x = np.concatenate([x, [0. for z in range(int(N))]])
+    vals, counts = lin_bin(x, int(max(x)))
+    b, c = log_bin(x, 1.0, 1.5, 1.5, 'float', drop_zeros=True)
+    plt.loglog(vals, counts, 'bx')
+    plt.loglog(b, c, 'r-')
+    plt.show()
+    
+def main():
+    print __doc__
+    
+if __name__ == "__main__":
+    main()
