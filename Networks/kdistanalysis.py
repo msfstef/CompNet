@@ -35,22 +35,22 @@ def get_k_prob_dist(m,N,runs):
 
 def get_k_prob_dist_log(m,N,runs):
     
-    k_list = np.empty(runs)
-    prob_list= np.empty(runs)
+    k_list = np.empty(runs,dtype='object')
+    prob_list= np.empty(runs,dtype='object')
     for run in range(runs):
         k, freq = load_dist_run(m,N,run)
         raw_data = np.repeat(k,freq)
         k, prob = log_bin(raw_data, m, 1.,1.3)
         k_list[run] = k
         prob_list[run] = prob
-    k = max(k_list, key=len)
-    for i in xrange(prob_list):
-        if len(k)>len(prob):
+    k = np.array(max(k_list, key=len))
+    for i in xrange(len(prob_list)):
+        if len(k)>len(prob_list[i]):
             prob_list[i]=np.pad(prob_list[i],(0,len(k)-len(prob_list[i])),'constant')
     
     prob_mean = np.mean(prob_list,axis=0)
-    prob_std = np.std(prob_list,axis=0)
-    return k, prob_mean, prob_std
+    prob_stderr = np.std(prob_list,axis=0)
+    return k, prob_mean, prob_stderr
     
 def get_k_prob_dist_cdf(m,N,runs):
     k, prob = get_k_prob_dist(m,N,runs)
@@ -81,7 +81,7 @@ def plot_k_max_dist(m,N, bins=10):
 
 def plot_k_dist(m,N,runs, method='logbin'):
     if method == 'logbin':
-        k, prob = get_k_prob_dist_log(m,N,runs)
+        k, prob, stderr = get_k_prob_dist_log(m,N,runs)
         k_theory, prob_theory = gen_theoretical_dist(m,np.max(k))
         ls='-'
     elif method == 'cdf':
@@ -92,8 +92,10 @@ def plot_k_dist(m,N,runs, method='logbin'):
         k, prob = get_k_prob_dist(m,N,runs)
         k_theory, prob_theory = gen_theoretical_dist(m,np.max(k))
         ls = '.'
-    plt.loglog(k, prob,ls, lw=2, label='Data')
-    plt.loglog(k_theory, prob_theory,'--', lw=1.5, label='Theory')
+    plt.errorbar(k, prob,yerr=stderr,ls=ls, lw=2, label='Data')
+    plt.plot(k_theory, prob_theory,'--', lw=1.5, label='Theory')
+    plt.xscale("log",nonposx='clip')
+    plt.yscale("log",nonposy='clip')
     plt.xlabel('$k$')
     plt.ylabel('$p(k)$')
     plt.legend(loc=0)
@@ -109,10 +111,17 @@ def func(prob, m, k_d):
         vals.append(np.sum(dist))
     return np.array(vals)
 
-def ks_test_dist(m,N):
-    k, prob = get_k_prob_dist_log(m,N)
-
+def ks_test_dist(m,N,runs):
+    k, prob, stderr = get_k_prob_dist_log(m,N,runs)
+    k,prob,stderr = k[1:],prob[1:],stderr[1:]
     prob_theory = k_dist_theory(m,k)
+    
+    stderr = stderr/prob
+    prob = np.log10(prob)
+    prob_theory = np.log10(prob_theory)
+    
+    reduced_chi = np.sum((prob-prob_theory)*(prob-prob_theory)/(stderr*stderr))/float(len(prob))
+    print reduced_chi
     
     results = stats.ks_2samp(prob, prob_theory)
     print results
