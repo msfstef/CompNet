@@ -57,7 +57,7 @@ class simplegraph {
 
 	int addVertex();
 
-	void addEdge(int , int);
+	int addEdge(int , int);
 	int addEdgeSlowly(int , int );
 
 	int getNeighbour(int , int );

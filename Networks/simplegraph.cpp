@@ -54,19 +54,19 @@ simplegraph::simplegraph(){
 	 * No checks on vertex indices performed.
 	 * No check for multiple edges of self-loops.
 	 */
-	void
+	int
 	simplegraph::addEdge(int s, int t){
 		if (std::find(v2v[s].begin(), v2v[s].end(),t)!=v2v[s].end()){
+			return 0;
 		} else{
 			v2v[s].push_back(t);
 			v2v[t].push_back(s);
 		
 			stubs.push_back(s);
 			stubs.push_back(t);
+			
+			return 1;
 		}
-		// This version is for set based structure
-		//		v2v[s].insert(t);
-		//		v2v[t].insert(s);
 	}
 	
 	
@@ -78,6 +78,7 @@ simplegraph::simplegraph(){
 		return stubs.at(i);
 	}
 	
+
 	/**
 	 * Adds a new edge from existing vertices s and t.
 	 * Checks on vertex indices and increases size if needed.
@@ -164,7 +165,7 @@ simplegraph::simplegraph(){
 		for (int v=0; v<getNumberVertices(); v++){	
 			int k= getVertexDegree(v);
 			if (dd.size()<=k){
-				dd.resize(k+1); // vector must have size equal to maximum degree stored +1 as starts from k=0
+				dd.resize(k+1,0); // vector must have size equal to maximum degree stored +1 as starts from k=0
 			}
 			if (k>max_k) {
 				max_k = k;

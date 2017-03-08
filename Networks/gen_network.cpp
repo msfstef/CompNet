@@ -28,10 +28,14 @@ using namespace std;
 
 int main(int argc, char *argv[]) {
 
-	cout << "Arguments are: N m (runs)" << endl; 
+	cout << "Arguments are: N m (runs) (method) (L)" << endl; 
 	cout << "               N  = number of vertices" << endl; 
 	cout << "               m = Number of edges added at each step." << endl; 
 	cout << "               runs = Number of total runs (default = 1)." << endl; 
+	cout << "               method = 0 - Preferential Attachment (default)." << endl; 
+	cout << "               		1 - Random Attachment" << endl; 
+	cout << "               		2 - Random Walk" << endl; 
+	cout << "               L = Length of random walk for method 3 (default = 0)." << endl; 
 
 // *************************************************************
 // User defined variables - default values then command line values are processed
@@ -44,6 +48,12 @@ int main(int argc, char *argv[]) {
 	
 	// Number of total runs.
 	int runs=1;
+	
+	// Method with which to attach edges.
+	int method=0;
+	
+	// Length of random walk, if random walk attachment is chosen.
+	int L=0;
 
 // End of user defined section
 // *************************************************************
@@ -61,6 +71,9 @@ int main(int argc, char *argv[]) {
 		case 3: 
 			runs= atoi(argv[3]);
 			break;
+		case 4: 
+			method= atoi(argv[4]);
+			break;
 		default:
 			cout << " Too many arguments" << endl;
 		}
@@ -68,8 +81,10 @@ int main(int argc, char *argv[]) {
 	
 	// Defining string values for file saving.
 	string m_str = to_string(m);
-	string underscore = "_";
 	string N_str = to_string(N);
+	string method_str = to_string(method);
+	string L_str = to_string(L);
+	string underscore = "_";
 	string end = ".txt";
 	
 	
@@ -79,12 +94,11 @@ int main(int argc, char *argv[]) {
 	
 	
 	// initialize random seed based on system time.
-	unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+	auto seed = chrono::high_resolution_clock::now().time_since_epoch().count();
 	
-	// Taken from http://stackoverflow.com/questions/28909982/generate-random-number-bigger-than-32767
 	// Generates large random numbers (rand() only goes up to 16 bit integers).
-	default_random_engine eng {seed};
-	uniform_int_distribution<> dist(0, 2*m*N+1);
+	// Uses mersenne twister algorithm for 32 bit integers.
+	mt19937 mt_rand(seed);
 	
 	// Will create a number of BA models equal to the runs given,
 	// to get better statistics for the distribution.
@@ -101,27 +115,63 @@ int main(int argc, char *argv[]) {
 			g.addEdge(v, i);
 		}
 	}
-	
-	for (int v=m+1; v<N; v++){
-		g.addVertex();
-		int temp = g.getNumberStubs();
-		while (g.getNumberStubs() < temp + 2*m){
-			int i = dist(eng) % temp;
-			int t = g.getStub(i);
-			g.addEdge(v,t);
-		}			
+	if (method == 0) {
+		// Preferential attachment.
+		for (int v=m+1; v<N; v++){
+			g.addVertex();
+			int stub_no = g.getNumberStubs();
+			int connections = 0;
+			while (connections < m){
+				int i = mt_rand() % stub_no;
+				int t = g.getStub(i);
+				connections += g.addEdge(v,t);
+			}			
+		}
+	} else if (method == 1) {
+		// Pure random attachment.
+		for (int v=m+1; v<N; v++){
+			g.addVertex();
+			int connections = 0;
+			while (connections < m){
+				int i = mt_rand() % v-1;
+				connections += g.addEdge(v,i);
+			}			
+		}
+	} else if (method == 2) {
+		// Random walk attachment.
+		for (int v=m+1; v<N; v++){
+			g.addVertex();
+			int connections = 0;
+			while (connections < m){
+				int i = mt_rand() % v-1;
+				for (int step; step<L; step++){
+					int j = mt_rand() % g.getVertexDegree(i);
+					i = g.getNeighbour(i, j);
+				}
+				connections += g.addEdge(v,i);
+			}			
+		}
 	}
-	// Add results to the degree distribution.
+	// Add results to the degree distribution and extract k_max.
 	k_max[run] = g.getDegreeDistribution(dd);
 	
+	
+	// Save distribution from run to file.
 	string distr_str = "./data/degreedistrun_";
 	distr_str.append(m_str);
 	distr_str.append(underscore);
 	distr_str.append(N_str);
 	distr_str.append(underscore);
 	distr_str.append(to_string(run));
+	distr_str.append(underscore);
+	distr_str.append(method_str);
+	if (method==3) {
+		distr_str.append(underscore);
+		distr_str.append(L_str);
+	}
 	distr_str.append(end);
 	
+	// Adapted from http://stackoverflow.com/questions/7352099/stdstring-to-char .
 	char *distr_char = new char[distr_str.length() + 1];
 	strcpy(distr_char, distr_str.c_str());
 
@@ -132,6 +182,8 @@ int main(int argc, char *argv[]) {
 	}
 	frout.close();
 	
+	
+	// Will only run for individual run, for debugging purposes.
 	if (runs==1){
  	cout << "Network has " << g.getNumberVertices() << " vertices" << endl;
 	cout << "Network has " << g.getNumberEdges() <<  " edges" << endl;
@@ -143,7 +195,6 @@ int main(int argc, char *argv[]) {
 	edge_str.append(N_str);
 	edge_str.append(end);
 	
-	// Adapted from http://stackoverflow.com/questions/7352099/stdstring-to-char .
 	char *edge_char = new char[edge_str.length() + 1];
 	strcpy(edge_char, edge_str.c_str());
 	
@@ -179,6 +230,12 @@ int main(int argc, char *argv[]) {
 	kmax_str.append(m_str);
 	kmax_str.append(underscore);
 	kmax_str.append(N_str);
+	kmax_str.append(underscore);
+	kmax_str.append(method_str);
+	if (method==3) {
+		kmax_str.append(underscore);
+		kmax_str.append(L_str);
+	}
 	kmax_str.append(end);
 	
 	char *kmax_char = new char[kmax_str.length() + 1];

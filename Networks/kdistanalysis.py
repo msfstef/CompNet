@@ -4,21 +4,25 @@ import matplotlib.pyplot as plt
 from scipy import stats
 from scipy import optimize
 
+method=0
+
+
 def load_edges(m,N):
     edge_list = np.loadtxt("./data/edgelist_"+str(int(m))+"_"+str(int(N))+".txt",
                            dtype='int')
     return edge_list
 
 def load_dist_run(m,N,run):
-    dist_file = np.loadtxt("./data/degreedistrun_"+str(int(m))+"_"+str(int(N))+"_"+str(int(run))+".txt",
+    dist_file = np.loadtxt("./data/degreedistrun_"+str(int(m))+"_"+str(int(N))+
+                            "_"+str(int(run))+"_"+str(method)+".txt",
                             skiprows=1, dtype='int')
     k_list = dist_file[:,0]
     frequency = dist_file[:,1]
     return k_list, frequency
 
 def load_k_max(m,N):
-    k_max_file = np.loadtxt("./data/kmax_"+str(int(m))+"_"+str(int(N))+".txt",
-                            skiprows=1, dtype='int')
+    k_max_file = np.loadtxt("./data/kmax_"+str(int(m))+"_"+str(int(N))+
+                            "_"+str(method)+".txt", skiprows=1, dtype='int')
     return k_max_file
 
 def get_k_prob_dist(m,N,runs):
@@ -33,14 +37,14 @@ def get_k_prob_dist(m,N,runs):
     prob = np.divide(freq_list,float(np.sum(freq_list)))
     return k_list, prob
 
-def get_k_prob_dist_log(m,N,runs):
+def get_k_prob_dist_log(m,N,runs, a=1.3):
     
     k_list = np.empty(runs,dtype='object')
     prob_list= np.empty(runs,dtype='object')
     for run in range(runs):
         k, freq = load_dist_run(m,N,run)
         raw_data = np.repeat(k,freq)
-        k, prob = log_bin(raw_data, m, 1.,1.3)
+        k, prob = log_bin(raw_data, m, 1.,a)
         k_list[run] = k
         prob_list[run] = prob
     k = np.array(max(k_list, key=len))
@@ -87,12 +91,14 @@ def plot_k_dist(m,N,runs, method='logbin'):
     elif method == 'cdf':
         k, prob = get_k_prob_dist_cdf(m,N,runs)
         k_theory, prob_theory = gen_theoretical_cdf(m,np.max(k))
+        stderr = np.zeros(len(prob))
         ls = '-'
     elif method == 'raw':
         k, prob = get_k_prob_dist(m,N,runs)
         k_theory, prob_theory = gen_theoretical_dist(m,np.max(k))
+        stderr = np.zeros(len(prob))
         ls = '.'
-    plt.errorbar(k, prob,yerr=stderr,ls=ls, lw=2, label='Data')
+    plt.errorbar(k, prob,stderr,fmt=ls, lw=2, label='Data')
     plt.plot(k_theory, prob_theory,'--', lw=1.5, label='Theory')
     plt.xscale("log",nonposx='clip')
     plt.yscale("log",nonposy='clip')
@@ -113,7 +119,7 @@ def func(prob, m, k_d):
 
 def ks_test_dist(m,N,runs):
     k, prob, stderr = get_k_prob_dist_log(m,N,runs)
-    k,prob,stderr = k[1:],prob[1:],stderr[1:]
+    k,prob,stderr = k[:20],prob[:20],stderr[:20]
     prob_theory = k_dist_theory(m,k)
     
     stderr = stderr/prob
@@ -127,8 +133,6 @@ def ks_test_dist(m,N,runs):
     print results
     results2 = stats.chisquare(prob, prob_theory)
     print results2
-
-
 
 
 
@@ -186,10 +190,10 @@ def find_prop_k_max(m_max, N_max):
     plt.show()
 
 
-def plot_dist_collapsed(D=0.5, m=3, N_max=1e7):
+def plot_dist_collapsed(D=0.5, m=3, N_max=1e7, runs=500):
     N_range = 10**np.arange(2,int(np.log10(N_max)), dtype='float')
     for N in N_range:
-        k, prob = get_k_prob_dist_log(m,N)
+        k, prob, stderr = get_k_prob_dist_log(m,N,runs)
         scaled_k = np.divide(k,np.sqrt(N))
         scaled_prob = np.multiply(prob/(2*m*(m+1)), k*(k+1)*(k+2))
         
