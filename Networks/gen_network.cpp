@@ -74,6 +74,9 @@ int main(int argc, char *argv[]) {
 		case 4: 
 			method= atoi(argv[4]);
 			break;
+		case 5: 
+			L = atoi(argv[5]);
+			break;
 		default:
 			cout << " Too many arguments" << endl;
 		}
@@ -133,7 +136,7 @@ int main(int argc, char *argv[]) {
 			g.addVertex();
 			int connections = 0;
 			while (connections < m){
-				int i = mt_rand() % v-1;
+				int i = mt_rand() % v;
 				connections += g.addEdge(v,i);
 			}			
 		}
@@ -143,7 +146,7 @@ int main(int argc, char *argv[]) {
 			g.addVertex();
 			int connections = 0;
 			while (connections < m){
-				int i = mt_rand() % v-1;
+				int i = mt_rand() % v;
 				for (int step; step<L; step++){
 					int j = mt_rand() % g.getVertexDegree(i);
 					i = g.getNeighbour(i, j);

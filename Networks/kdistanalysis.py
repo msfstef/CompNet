@@ -1,10 +1,10 @@
 import numpy as np
-from log_bin_BACKUP import log_bin, lin_bin
+from log_bin import log_bin, lin_bin
 import matplotlib.pyplot as plt
 from scipy import stats
 from scipy import optimize
 
-method=0
+method=1
 
 
 def load_edges(m,N):
@@ -176,7 +176,7 @@ def fit_k_max_vs_N(m, N_max, plot=True):
     return (power, powerErr), (prop,propErr)
 
 def find_prop_k_max(m_max, N_max):
-    m_list = np.arange(3,m_max+1)
+    m_list = np.arange(1,m_max+1)
     intcp_list = []
     intcp_err_list = []
     for m in m_list:

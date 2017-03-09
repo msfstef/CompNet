@@ -126,54 +126,45 @@ def lin_bin(data, num_bins):
 # counts  - list - the probability of data being in each bin
 ################################################################################
 @jit
-def log_bin(data, bin_start=1., first_bin_width=1., a=2., datatype='integer', drop_zeros=True):
+def log_bin(data, bin_start=1., first_bin_width=1., a=2., datatype='int', drop_zeros=True):
     # ensure data is numpy array of floats
     if drop_zeros:
-        data = np.array(data, dtype='float')[data!=0]
+        data = np.array(data)[data!=0]
     else:
-        data = np.array(data, dtype='float')
-            
-    num_datapoints = len(data)
-    max_x = np.max(data)
+        data = np.array(data)
     
-    # create array of the edges of the bins beginning with the left edge of the
-    # leftmost bin, and ending with the right edge of the rightmost
-    bin_width = first_bin_width
-    bins = [bin_start]
-    new_edge = bin_start
-    while new_edge <= max_x:
-        last_edge = new_edge
-        new_edge = last_edge + bin_width
-        bins.append(new_edge)
-        bin_width *= a
+    max_x = float(np.max(data))
+    a = float(a)
+    first_bin_width = float(first_bin_width)
+    
+    
+    max_power = np.ceil(np.log(1+((a-1)*max_x)/first_bin_width)/np.log(a) -1.)
+    
+    widths = first_bin_width*np.power(a,np.arange(max_power+1, dtype='float'))
+    
+    bins = np.cumsum(np.concatenate([np.array([bin_start]), widths]))
     
     # find how many datapoints are in each bin
     # counts[i] is how many points are there in the bin whose left edge is bins[i]
     indices = np.digitize(data, bins[1:])
-    counts = np.zeros(len(bins[1:]), dtype='float')
-    for i in indices:
-        counts[i] += 1./num_datapoints
-        
-    # normalise number of datapoints by the width of the bin
-    # how we do this depends on whether we are binning integers or real numbers
-    # by width - we mean the amount of possible values that can fall in that bin
+    counts = np.bincount(indices)/float(data.size)
+    bins = bins[:len(counts)+1]
+    widths = widths[:len(counts)]
     
+
     # we want to give a 'centre' of the bin to plot its height from
     # if the data is approximately power law distributed then the most
     # representative would be the geometric mean, since in it is in the middle
-    # in log space   
-    
-    bin_indices = range(len(bins)-1) 
+    # in poutsoktonos log space
+    bin_indices = np.arange(len(bins)-1) 
     bins = np.array(bins)
     if datatype == 'float':
-        widths = (np.roll(bins, -1) - bins)[:-1]
         centres = np.sqrt(np.roll(bins, -1)* bins)[:-1]
-    else:
-        widths = (np.ceil(np.roll(bins, -1)) - np.ceil(bins))[:-1]
+    elif datatype == 'int':
         centres = np.empty(len(bin_indices))
+        widths = np.diff(np.ceil(bins),1)
         for i in bin_indices:
-            centres[i] = geometric_mean(np.arange(int(np.ceil(bins[i])), int(np.ceil(bins[i+1]))))
-    widths = np.array(widths)
+            centres[i] = geometric_mean(np.arange(np.ceil(bins[i]), np.ceil(bins[i+1])))
     counts /= widths
     return centres, counts
 
