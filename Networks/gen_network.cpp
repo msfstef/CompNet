@@ -111,11 +111,12 @@ int main(int argc, char *argv[]) {
 	// start by defining an empty graph 
 	simplegraph g;
 	
+	
 	// Initiate complete graph with m vertices.
 	for (int v=0; v<m+1; v++){
 		g.addVertex();
 		for (int i=0; i<v; i++){
-			g.addEdge(v, i);
+			g.addEdge(v, i, method);
 		}
 	}
 	if (method == 0) {
@@ -127,7 +128,7 @@ int main(int argc, char *argv[]) {
 			while (connections < m){
 				int i = mt_rand() % stub_no;
 				int t = g.getStub(i);
-				connections += g.addEdge(v,t);
+				connections += g.addEdge(v,t, method);
 			}			
 		}
 	} else if (method == 1) {
@@ -137,7 +138,7 @@ int main(int argc, char *argv[]) {
 			int connections = 0;
 			while (connections < m){
 				int i = mt_rand() % v;
-				connections += g.addEdge(v,i);
+				connections += g.addEdge(v,i, method);
 			}			
 		}
 	} else if (method == 2) {
@@ -147,11 +148,11 @@ int main(int argc, char *argv[]) {
 			int connections = 0;
 			while (connections < m){
 				int i = mt_rand() % v;
-				for (int step; step<L; step++){
+				for (int step=0; step<L; step++){
 					int j = mt_rand() % g.getVertexDegree(i);
 					i = g.getNeighbour(i, j);
 				}
-				connections += g.addEdge(v,i);
+				connections += g.addEdge(v,i, method);
 			}			
 		}
 	}
@@ -168,7 +169,7 @@ int main(int argc, char *argv[]) {
 	distr_str.append(to_string(run));
 	distr_str.append(underscore);
 	distr_str.append(method_str);
-	if (method==3) {
+	if (method==2) {
 		distr_str.append(underscore);
 		distr_str.append(L_str);
 	}
@@ -235,7 +236,7 @@ int main(int argc, char *argv[]) {
 	kmax_str.append(N_str);
 	kmax_str.append(underscore);
 	kmax_str.append(method_str);
-	if (method==3) {
+	if (method==2) {
 		kmax_str.append(underscore);
 		kmax_str.append(L_str);
 	}
@@ -251,6 +252,6 @@ int main(int argc, char *argv[]) {
 	}
 	fout2.close();
 	
-	cout << "Complete." << endl;
+	cout << "Complete. Parameters (N,m,L):" << N << " " << m << " "  << L << endl;
 	return 0;
 }

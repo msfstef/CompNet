@@ -55,15 +55,17 @@ simplegraph::simplegraph(){
 	 * No check for multiple edges of self-loops.
 	 */
 	int
-	simplegraph::addEdge(int s, int t){
+	simplegraph::addEdge(int s, int t, int method){
 		if (std::find(v2v[s].begin(), v2v[s].end(),t)!=v2v[s].end()){
 			return 0;
 		} else{
 			v2v[s].push_back(t);
 			v2v[t].push_back(s);
-		
+			
+			if (method == 0) {
 			stubs.push_back(s);
 			stubs.push_back(t);
+			}
 			
 			return 1;
 		}
@@ -87,13 +89,13 @@ simplegraph::simplegraph(){
 	 * Returns negative if self-loop attempted, 0 if OK.
 	 */
 	int
-	simplegraph::addEdgeSlowly(int s, int t){
+	simplegraph::addEdgeSlowly(int s, int t, int method){
 		if (s==t) return -1;
 		int maxSize=max(s,t)+1;
 		if (v2v.size()<maxSize){
 			v2v.resize(maxSize);
 		}
-		addEdge(s,t);
+		addEdge(s,t,method);
 		return 0;
 	}
 	/**
