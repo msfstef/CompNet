@@ -1,0 +1,1 @@
+cmd /c "C:/MinGW/set_distro_paths.bat && g++ -Ofast -o gen_network simplegraph.h simplegraph.cpp gen_network.cpp -Wno-write-strings"

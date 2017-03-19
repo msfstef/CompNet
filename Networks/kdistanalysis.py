@@ -6,7 +6,7 @@ from scipy import optimize
 from scipy import integrate
 import os.path
 
-method=2
+method=0
 L=15
 
 
@@ -55,6 +55,9 @@ def get_k_prob_dist(m,N,runs):
     
     prob_mean = np.mean(freq_list,axis=0)/float(N)
     prob_stderr = np.std(freq_list,axis=0)/float(N)
+    prob_mean = prob_mean[m:]
+    prob_stderr = prob_stderr[m:]
+    k = k[m:]
     np.save(path,np.array([k,prob_mean,prob_stderr]))
     return k, prob_mean, prob_stderr
 
@@ -93,6 +96,7 @@ def get_k_prob_dist_cdf(m,N,runs):
 
 
 def k_dist_theory(m, k):
+    k = np.array(k,dtype='float')
     if method == 0 or (method == 2 and L>0):
         return float(2*m*(m+1))/(k*(k+1)*(k+2))
     elif method == 1 or method == 2:
@@ -143,10 +147,12 @@ def plot_k_dist(m,N,runs, process='logbin', err=True):
     plt.show()
 
 
+
+
 def func(k_vals, m=1.):
     vals = []
     def dist(k):
-        return float(2*m*(m+1))/(k*(k+1)*(k+2))
+        return (2./np.log(float((m+1)*(m+1))/float(m*(m+2))))*(1./(k*(k+1)*(k+2)))
     for k in k_vals:
         vals.append(integrate.quad(dist,float(m),float(k))[0])
     return np.array(vals)
@@ -163,14 +169,41 @@ def func2(k_vals,m=1):
 def ks_test_dist(m,N,runs):
     k, prob, stderr = get_k_prob_dist(m,N,runs)
     k,prob,stderr = k[:],prob[:],stderr[:]
-    k_theory = np.arange(m,int(1e7),dtype='float')
-    prob_theory = k_dist_theory(m,k_theory)
-    print prob_theory/np.sum(prob_theory)
+    #k_theory = np.arange(m,int(1e6),dtype='float')
+    prob_theory = k_dist_theory(m,k)
+
     
-    c = np.random.choice(k,10000, p = prob/np.sum(prob))
-    d = np.random.choice(k_theory,10000, p = prob_theory/np.sum(prob_theory))
-    print max(d)
-    print max(c)
+    #freq = prob*N*runs
+    #c = np.repeat(k,np.array(freq,dtype='int'))
+
+    #d = np.random.choice(k_theory,10000, p = prob_theory/np.sum(prob_theory))    
+    #print max(d)
+    #print max(c)
+    #print len(np.sort(d))
+    
+    def ecdf(x):
+        xs = np.sort(x)
+        ys = np.arange(1, len(xs)+1)/float(len(xs))
+        return xs, ys
+    
+    #xs,ys = ecdf(d)
+    #xs = xs[::-1]
+    #ys = ys[::-1]
+    #xs, ind = np.unique(xs, True)
+    #ys = ys[ind]
+    #xs = xs[::-1]
+    #ys = ys[::-1]
+    #y = func2(xs)
+    #a = len(xs[xs==1])
+    #y = y[a-1:]
+    #ys = ys[a-1:]
+    #xs = xs[a-1:]
+    #print xs
+    #print ys
+    #print y
+    #print np.max(np.abs(y-ys))
+    #plt.plot(xs,ys,'r')
+    #plt.plot(xs,y,'b')
     
     #stderr = stderr/prob
     #prob = np.log10(prob)
@@ -179,11 +212,11 @@ def ks_test_dist(m,N,runs):
     #reduced_chi = np.sum((prob-prob_theory)*(prob-prob_theory)/(stderr*stderr))
     #print reduced_chi
     
-    kstest = stats.kstest(c, func2)    
-    print kstest
+    #kstest = stats.kstest(d, func)    
+    #print kstest
     
-    results = stats.ks_2samp(c,d)
-    print results
+    #results = stats.ks_2samp(c,d)
+    #print results
     results2 = stats.chisquare(N*runs*prob, N*runs*prob_theory)
     print results2
 
